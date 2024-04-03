@@ -1,10 +1,10 @@
 import 'core/fps-timers'
 
 local fpsTimer = FPSTimer
-local defaultOptions <const> = { frame = 1, fps = 12, runOnce = false }
 
 class('AnimatedSprite').extends(playdate.graphics.sprite)
 
+local defaultOptions <const> = { frame = 1, fps = 12, runOnce = false }
 function AnimatedSprite:init(imgTable, options)
   AnimatedSprite.super.init(self, imgTable[1])
   self:setImageTable(imgTable, options)

@@ -8,11 +8,15 @@ import "CoreLibs/ui"
 import "actors/ant"
 import "core/ticker"
 
+local kButtonB <const> = playdate.kButtonB
 local sprite <const> = playdate.graphics.sprite
 local timer <const> = playdate.timer
 local ui <const> = playdate.ui
+local buttonIsPressed <const> = playdate.buttonIsPressed
 local isCrankDocked <const> = playdate.isCrankDocked
 local drawFPS <const> = playdate.drawFPS
+
+local ticker <const> = Ticker
 
 for i=1,100 do
   local ant = Ant()
@@ -24,6 +28,10 @@ function playdate.update()
   sprite.update()
   timer.updateTimers()
 
+  if buttonIsPressed(kButtonB) then
+    ticker._simulateReverseTick()
+  end
+
   if isCrankDocked() then
     ui.crankIndicator:draw()
   end
@@ -33,7 +41,7 @@ end
 
 if playdate.isSimulator then
   local isPaused = false
-  local simulatedCrank = timer.new(1000 / TICKS_PER_ROTATION, Ticker._simulateTick)
+  local simulatedCrank = timer.new(1000 / TICKS_PER_ROTATION, ticker._simulateTick)
   simulatedCrank.repeats = true
 
   function playdate.keyPressed(key)

@@ -16,6 +16,10 @@ function Ticker._simulateTick()
   tickerSingleton:_processTick() 
 end
 
+function Ticker._simulateReverseTick()
+  tickerSingleton:_processReverseTick() 
+end
+
 function Ticker:init()
   self.actors = {}
 end
@@ -42,6 +46,12 @@ end
 function Ticker:_processTick()
   for i=1, #self.actors do
     self.actors[i]:act()
+  end
+end
+
+function Ticker:_processReverseTick()
+  for i=1, #self.actors do
+    self.actors[i]:undo()
   end
 end
 

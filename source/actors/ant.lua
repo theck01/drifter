@@ -1,13 +1,14 @@
-import "core/animated-sprite"
 import "core/actor"
+import "core/animated-sprite"
 
 class('Ant').extends(Actor)
+
 
 local ORIENTATION <const> = { LEFT = 'LEFT', RIGHT = 'RIGHT' }
 local ACTION <const> = { IDLE = 'IDLE', WALK = 'WALK' }
 local MAX_SPEED_PX <const> = 8
-local INC_SPEED_TABLES = { [1] = 2, [2] = 4, [4] = 8 }
-local DEC_SPEED_TABLES = { [1] = 0, [2] = 1, [4] = 2, [8] = 4 }
+local INC_SPEED_TABLES = { [1] = 2, [2] = 4, [4] = 8, [8] = 8 }
+local DEC_SPEED_TABLES = { [1] = 1, [2] = 1, [4] = 2, [8] = 4 }
 
 local ANIMATIONS <const> = {
   IDLE = {
@@ -20,65 +21,82 @@ local ANIMATIONS <const> = {
   }
 }
 
-function Ant:init() 
-  Ant.super.init(self, AnimatedSprite(ANIMATIONS.IDLE.RIGHT))
-  self.state = {
-    orientation = ORIENTATION.RIGHT,
+local function createState()
+  return {
     action = ACTION.IDLE,
+    orientation = ORIENTATION.RIGHT,
     speed = 0,
-    ticksBeforeNextAction = math.random(12, 36)
+    ticksBeforeNextDecision = math.random(12, 36)
   }
 end
 
-function Ant:act()
+function Ant:init() 
+  Ant.super.init(self, AnimatedSprite(ANIMATIONS.IDLE.RIGHT), createState)
+end
+
+function Ant:copyStateTo(state)
+  state.orientation = self.state.orientation
+  state.action = self.state.action
+  state.speed = self.state.speed
+  state.ticksBeforeNextDecision = self.state.ticksBeforeNextDecision
+end
+
+function Ant:copyStateFrom(state)
+  if 
+    state.orientation ~= self.state.orientation or 
+    state.action ~= self.state.action 
+  then
+    self.sprite:setImageTable(
+      ANIMATIONS[state.action][state.orientation], 
+      { frame = state.action == self.state.action and self.frame or 1 }
+     )
+  end
+  self.state.orientation = state.orientation
+  self.state.action = state.action
+  self.state.speed = state.speed
+  self.state.ticksBeforeNextDecision = state.ticksBeforeNextDecision
+end
+
+function Ant:plan(delta)
+  local makeNewDecision = false
   if self.state.action == ACTION.WALK then
     local velocity <const> = self.state.orientation == ORIENTATION.RIGHT and self.state.speed or -1 * self.state.speed
     local desiredX = self.sprite.x + velocity
     local clampedX = math.min(350, math.max(50, desiredX))
-    self.sprite:moveTo(clampedX, self.sprite.y)
-
-    -- If reached the end of the screen, pick another action
-    if  desiredX ~= clampedX then
-      self:pickNextAction()
-      return
-    end
-
+    delta.moveTo.x = clampedX
+    makeNewDecision = desiredX ~= clampedX
 
     -- Accelerate or decelerate
-    if self.state.ticksBeforeNextAction <= 4 then 
-      self.state.speed = DEC_SPEED_TABLES[self.state.speed]
+    if self.state.ticksBeforeNextDecision <= 4 then 
+      delta.state.speed = DEC_SPEED_TABLES[self.state.speed]
     elseif self.state.speed < MAX_SPEED_PX then
-      self.state.speed = INC_SPEED_TABLES[self.state.speed]
+      delta.state.speed = INC_SPEED_TABLES[self.state.speed]
+    end
+
+    if delta.state.speed == nil then
+      print('Error incoming')
+      printTable(self.state)
     end
   end
 
-  self.state.ticksBeforeNextAction -= 1
-  
-  if self.state.ticksBeforeNextAction <= 0 then
-    self:pickNextAction()
-  end
-end
-
-function Ant:pickNextAction()
-  local nextAction <const> = math.random() > 0.5 and 
-    ACTION.WALK or ACTION.IDLE
-  local nextOrientation = nil
-  if nextAction == ACTION.WALK then
-    nextOrientation = self.sprite.x < 200 and ORIENTATION.RIGHT or ORIENTATION.LEFT
+  if self.state.ticksBeforeNextDecision == 1 then
+    delta.state.ticksBeforeNextDecision = math.random(12, 36)
+    makeNewDecision = true
   else
-    nextOrientation = math.random() > 0.5 and
-      ORIENTATION.RIGHT or ORIENTATION.LEFT
+    delta.state.ticksBeforeNextDecision -= 1
   end
 
-  self.sprite:setImageTable(
-    ANIMATIONS[nextAction][nextOrientation], 
-    { frame = nextAction == self.state.action and self.frame or 1 }
-  )
-
-  self.state = {
-    orientation = nextOrientation,
-    action = nextAction,
-    speed = nextAction == ACTION.WALK and 1 or 0,
-    ticksBeforeNextAction = math.random(12, 36)
-  }
+  if makeNewDecision then
+    delta.state.action = math.random() > 0.5 and 
+      ACTION.WALK or ACTION.IDLE
+    if delta.state.action == ACTION.WALK then
+      delta.state.orientation = self.sprite.x < 200 and 
+        ORIENTATION.RIGHT or ORIENTATION.LEFT
+      delta.state.speed = 1
+    else
+      delta.state.orientation = math.random() > 0.5 and
+        ORIENTATION.RIGHT or ORIENTATION.LEFT
+      delta.state.speed = 0
+    end
+  end
 end
