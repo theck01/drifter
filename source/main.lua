@@ -1,9 +1,15 @@
-import "CoreLibs/object"
 import "CoreLibs/graphics"
+import "CoreLibs/object"
+import "CoreLibs/sprites"
+import "CoreLibs/timer"
 
-local counter = 0
+import "actors/ant"
+
+local ant = Ant()
+ant:moveTo(200, 120)
+ant:add()
 
 function playdate.update()
-  print(counter)
-  counter += 1
+  playdate.graphics.sprite.update()
+  playdate.timer.updateTimers()
 end
