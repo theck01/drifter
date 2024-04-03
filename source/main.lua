@@ -18,4 +18,5 @@ function playdate.update()
   if playdate.isCrankDocked() then
     playdate.ui.crankIndicator:draw()
   end
+  playdate.drawFPS(0, 0)
 end
