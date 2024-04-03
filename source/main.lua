@@ -8,29 +8,32 @@ import "CoreLibs/ui"
 import "actors/ant"
 import "core/ticker"
 
-local ant = Ant()
-ant.sprite:moveTo(200, 120)
-ant:add()
+local sprite <const> = playdate.graphics.sprite
+local timer <const> = playdate.timer
+local ui <const> = playdate.ui
+local isCrankDocked <const> = playdate.isCrankDocked
+local drawFPS <const> = playdate.drawFPS
+
+for i=1,100 do
+  local ant = Ant()
+  ant.sprite:moveTo(math.random(60,340), math.random(20,220))
+  ant:add()
+end
 
 function playdate.update()
-  playdate.graphics.sprite.update()
-  playdate.timer.updateTimers()
+  sprite.update()
+  timer.updateTimers()
 
-  if playdate.isCrankDocked() then
-    playdate.ui.crankIndicator:draw()
+  if isCrankDocked() then
+    ui.crankIndicator:draw()
   end
 
-  playdate.drawFPS(0, 0)
+  drawFPS(0, 0)
 end
 
 if playdate.isSimulator then
   local isPaused = false
-  local simulatedCrank = playdate.timer.new(
-    1000 / 30,
-    function ()
-      Ticker._simulateTick()
-    end
-  )
+  local simulatedCrank = timer.new(1000 / TICKS_PER_ROTATION, Ticker._simulateTick)
   simulatedCrank.repeats = true
 
   function playdate.keyPressed(key)

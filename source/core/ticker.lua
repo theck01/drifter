@@ -1,6 +1,6 @@
 class('Ticker').extends()
 
-local TICKS_PER_ROTATION = 30 
+TICKS_PER_ROTATION = 24 
 
 local tickerSingleton = nil
 
@@ -45,8 +45,9 @@ function Ticker:_processTick()
   end
 end
 
+local getCrankTicks <const> = playdate.getCrankTicks
 function playdate.cranked()
-  local ticks = playdate.getCrankTicks(TICKS_PER_ROTATION)
+  local ticks = getCrankTicks(TICKS_PER_ROTATION)
   for i=1, ticks do
     tickerSingleton:_processTick()
   end
