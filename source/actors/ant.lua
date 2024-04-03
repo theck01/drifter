@@ -1,6 +1,7 @@
 import "core/animated-sprite"
+import "core/actor"
 
-class('Ant').extends(AnimatedSprite)
+class('Ant').extends(Actor)
 
 local ORIENTATION <const> = { LEFT = 'LEFT', RIGHT = 'RIGHT' }
 local ACTION <const> = { IDLE = 'IDLE', WALK = 'WALK' }
@@ -20,25 +21,21 @@ local ANIMATIONS <const> = {
 }
 
 function Ant:init() 
-  Ant.super.init(self, ANIMATIONS.WALK.RIGHT)
+  Ant.super.init(self, AnimatedSprite(ANIMATIONS.IDLE.RIGHT))
   self.state = {
     orientation = ORIENTATION.RIGHT,
-    action = ACTION.WALK,
-    speed = 1,
-    framesBeforeNextAction = math.random(30, 90)
+    action = ACTION.IDLE,
+    speed = 0,
+    ticksBeforeNextAction = math.random(12, 36)
   }
-end
-
-function Ant:update()
-  self:act()
 end
 
 function Ant:act()
   if self.state.action == ACTION.WALK then
     local velocity <const> = self.state.orientation == ORIENTATION.RIGHT and self.state.speed or -1 * self.state.speed
-    local desiredX = self.x + velocity
+    local desiredX = self.sprite.x + velocity
     local clampedX = math.min(350, math.max(50, desiredX))
-    self:moveTo(clampedX, self.y)
+    self.sprite:moveTo(clampedX, self.sprite.y)
 
     -- If reached the end of the screen, pick another action
     if  desiredX ~= clampedX then
@@ -48,16 +45,16 @@ function Ant:act()
 
 
     -- Accelerate or decelerate
-    if self.state.framesBeforeNextAction <= 4 then 
+    if self.state.ticksBeforeNextAction <= 4 then 
       self.state.speed = DEC_SPEED_TABLES[self.state.speed]
     elseif self.state.speed < MAX_SPEED_PX then
       self.state.speed = INC_SPEED_TABLES[self.state.speed]
     end
   end
 
-  self.state.framesBeforeNextAction -= 1
+  self.state.ticksBeforeNextAction -= 1
   
-  if self.state.framesBeforeNextAction <= 0 then
+  if self.state.ticksBeforeNextAction <= 0 then
     self:pickNextAction()
   end
 end
@@ -67,13 +64,13 @@ function Ant:pickNextAction()
     ACTION.WALK or ACTION.IDLE
   local nextOrientation = nil
   if nextAction == ACTION.WALK then
-    nextOrientation = self.x < 200 and ORIENTATION.RIGHT or ORIENTATION.LEFT
+    nextOrientation = self.sprite.x < 200 and ORIENTATION.RIGHT or ORIENTATION.LEFT
   else
     nextOrientation = math.random() > 0.5 and
       ORIENTATION.RIGHT or ORIENTATION.LEFT
   end
 
-  self:setImageTable(
+  self.sprite:setImageTable(
     ANIMATIONS[nextAction][nextOrientation], 
     { frame = nextAction == self.state.action and self.frame or 1 }
   )
@@ -82,6 +79,6 @@ function Ant:pickNextAction()
     orientation = nextOrientation,
     action = nextAction,
     speed = nextAction == ACTION.WALK and 1 or 0,
-    framesBeforeNextAction = math.random(30, 90)
+    ticksBeforeNextAction = math.random(12, 36)
   }
 end
