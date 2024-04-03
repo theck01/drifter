@@ -1,12 +1,24 @@
 class('AnimatedSprite').extends(playdate.graphics.sprite)
 
-function AnimatedSprite:init(imgTable, fps, runOnce) 
-  AnimatedSprite.super.init(self, imgTable[1])
+local defaultOptions <const> = { frame = 1, fps = 12, runOnce = false }
 
+function AnimatedSprite:init(imgTable, options)
+  AnimatedSprite.super.init(self, imgTable[1])
+  self:setImageTable(imgTable, options)
+end
+
+function AnimatedSprite:setImageTable(imgTable, options) 
+  if self.timer then
+    self.timer:remove()
+  end
+
+  local optionsToUse <const> = options or defaultOptions
   self.imgTable = imgTable
-  self.frame = 1
-  self.fps = fps or 12
-  self.loop = not runOnce
+  self.frame = optionsToUse.frame or 1
+  self.fps = optionsToUse.fps or 12
+  self.loop = not optionsToUse.runOnce
+
+  self:setImage(self.imgTable[self.frame])
 
   local thisSprite <const> = self
   local animationTimer <const> = playdate.timer.new(
