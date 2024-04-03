@@ -5,9 +5,9 @@ class('Ant').extends(Actor)
 
 local ORIENTATION <const> = { LEFT = 'LEFT', RIGHT = 'RIGHT' }
 local ACTION <const> = { IDLE = 'IDLE', WALK = 'WALK' }
-local MAX_SPEED_PX <const> = 4
-local INC_SPEED_TABLES = { [1] = 2, [2] = 4 }
-local DEC_SPEED_TABLES = { [1] = 0, [2] = 1, [4] = 2 }
+local MAX_SPEED_PX <const> = 8
+local INC_SPEED_TABLES = { [1] = 2, [2] = 4, [4] = 8 }
+local DEC_SPEED_TABLES = { [1] = 0, [2] = 1, [4] = 2, [8] = 4 }
 
 local ANIMATIONS <const> = {
   IDLE = {

@@ -1,6 +1,6 @@
 class('Ticker').extends()
 
-local TICKS_PER_ROTATION = 12
+local TICKS_PER_ROTATION = 30 
 
 local tickerSingleton = nil
 
@@ -10,6 +10,10 @@ end
 
 function Ticker.remove(actor)
   tickerSingleton:_remove(actor)
+end
+
+function Ticker._simulateTick()
+  tickerSingleton:_processTick() 
 end
 
 function Ticker:init()
