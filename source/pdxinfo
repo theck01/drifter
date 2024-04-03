@@ -1,0 +1,6 @@
+name=Colony
+author=Larrry
+description=Find a safe home for ants on the run.
+bundleId=ink.larrry.colony
+version=0.1
+buildNumber=1
