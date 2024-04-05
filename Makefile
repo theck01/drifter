@@ -21,7 +21,7 @@ UINCDIR =
 UASRC = 
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS = -Wdouble-promotion -Wall -Wextra
+UDEFS = -Wdouble-promotion -Wall -Wextra -g
 
 # Define ASM defines here
 UADEFS = 

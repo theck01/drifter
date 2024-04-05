@@ -4,10 +4,8 @@
 
 #include "pd_api.h"
 
-typedef struct provider_struct {
-	PlaydateAPI* api;
-} provider;
+PlaydateAPI* get_api(void);
 
-static provider PD = { .api = NULL };
+void set_api(PlaydateAPI* new_api);
 
 #endif

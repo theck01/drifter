@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "../core/api-provider.h"
+#include "C/core/api-provider.h"
 
 #include "history-stack.h"
 
@@ -15,13 +15,13 @@ struct history_stack_struct {
 history_stack* history_stack_create(uint8_t size) {
   history_stack* s = malloc(sizeof(history_stack));
   if (s == NULL) {
-    PD.api->system->error("Could not allocate struct for new history stack");
+    get_api()->system->error("Could not allocate struct for new history stack");
   }
   s->i = 0;
   s->size = size;
   s->stack = malloc(size * sizeof(void *));
   if (s->stack == NULL) {
-    PD.api->system->error("Could not allocate child array in history stack");
+    get_api()->system->error("Could not allocate child array in history stack");
   }
   for (uint8_t i=0; i < size; i++) {
     s->stack[i] = NULL;
