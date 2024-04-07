@@ -21,12 +21,14 @@ void vector_insert_at_index(vector* v, void* item, uint16_t i);
 void* vector_remove_at_index(vector* v, uint16_t i);
 
 
-typedef bool (*find_fn)(void *);
-typedef struct find_result_struct {
+// Should return 1 to search later in the vector, -1 to search earlier, and 0
+// for direct matches.
+typedef int8_t (*compare_fn)(void *);
+typedef struct bsearch_result_struct {
   void* item;
   uint16_t index;
-} find_result;
-find_result vector_find_index(vector* v, find_fn find);
+} bsearch_result;
+bsearch_result vector_bsearch(vector* v, compare_fn compare);
 
 void vector_destroy(vector* v);
 

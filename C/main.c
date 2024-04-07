@@ -28,7 +28,7 @@ int eventHandler(
 	if ( event == kEventInitLua )
 	{
     set_api(playdate);
-    playdate->system->logToConsole("Will this log before crashing?");
+    playdate->system->resetElapsedTime();
     run_tests();
 	}
 

@@ -82,9 +82,7 @@ void vector_insert_at_index(vector* v, void* item, uint16_t i) {
 
   // Clamp insertion index to vector length, there should be no
   // holes in the vector.
-  get_api()->system->logToConsole("Insert point %d of %d", i, length);
   i = min(i, length);
-  get_api()->system->logToConsole("Insert point %d of %d", i, length);
 
   // Shift entries after insertion point by 1
   void** array = v->array;
@@ -93,7 +91,6 @@ void vector_insert_at_index(vector* v, void* item, uint16_t i) {
     shift_i >= i && shift_i < UINT16_MAX; 
     shift_i--
   ) {
-    get_api()->system->logToConsole("Insert point %d, shiftint %d of %d", i, shift_i, length);
     array[shift_i+1] = array[shift_i]; 
   }
 
@@ -127,19 +124,26 @@ void* vector_remove_at_index(vector* v, uint16_t i) {
   return item;
 }
 
-find_result vector_find_index(vector* v, find_fn find) {
-  uint16_t length = v->length;
+bsearch_result vector_bsearch(vector* v, compare_fn compare) {
   void** array = v->array;
-  for (uint16_t i=0; i < length; i++) {
-    if (find(array[i])) {
-      return (find_result) { 
-        .item = array[i], 
-        .index = i 
+  int32_t start = 0;
+  int32_t end = v->length-1;
+  while(start <= end) {
+    int32_t i = ((end - start) / 2) + start;
+    int8_t comparison = compare(array[i]);
+    if (comparison < 0) {
+      end = i-1;
+    } else if (comparison > 0) {
+      start = i+1;
+    } else {
+      return (bsearch_result) {
+        .item = array[i],
+        .index = i
       };
     }
   }
 
-  return (find_result) { 
+  return (bsearch_result) { 
     .item = NULL,
     .index = UINT16_MAX 
   };
