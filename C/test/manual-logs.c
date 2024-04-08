@@ -1,84 +1,74 @@
 #include "pd_api.h"
 
 #include "C/core/api-provider.h"
-#include "C/utils/memory-pool.h"
-#include "C/utils/vector.h"
+#include "C/core/fps-timers.h"
 
-char *values[10] = {
-  "Hello",
-  "my",
-  "baby",
-  "hello",
-  "my",
-  "honey",
-  "hello",
-  "my",
-  "ragtime",
-  "gal"
+#include "manual-logs.h"
+
+static pretend_animation test[] = {
+  { .fps = 1, .label = "1-frame" },
+  { .fps = 2, .label = "2-frame-a" },
+  { .fps = 30, .label = "every-frame" },
+  { .fps = 2, .label = "2-frame-b" },
+  { .fps = 2, .label = "2-frame-c" },
+  { .fps = 12, .label = "12-frame" },
 };
+static uint32_t timer_ids[6];
 
-
-
-typedef struct test_item_struct {
-  uint8_t id;
-  char * label;
-} test_item;
-
-void* create_test_item(void) {
-  return malloc(sizeof(test_item));
+void advance_animation(void* animation) {
+  pretend_animation* a = (pretend_animation*)animation;
+  get_api()->system->logToConsole(
+    "Pretend animation \"%s\" advanced at  %d fps",
+    a->label,
+    a->fps
+  );
 }
 
-uint8_t next_test_id = 2;
-test_item stack_item_1 = {
-  .label = "Chuck Jones",
-  .id = 0
-};
-test_item stack_item_2 = {
-  .label = "Michigan J. Frog",
-  .id = 1
-};
+static uint32_t killer_id = 7;
+static uint32_t kill_target_id = UINT32_MAX;
+static uint8_t kill_target_fps = 0;
+static int delay; 
+void kill_animation(void* _) {
+  delay--;
+  if (delay > 0) {
+    get_api()->system->logToConsole("killer has %d more rounds to wait...", delay);
+    return;
+  } else if (delay < 0) {
+    get_api()->system->logToConsole("killer lingers as a corrupted ghost...");
+    return;
+  }
 
-int8_t compare8(void *i) {
-  test_item* ti = (test_item*)i;
-  return ti->id < 8 ? 1 : (ti->id > 8 ? -1 : 0);
+  if (kill_target_fps == 0 || kill_target_id == UINT32_MAX) {
+    get_api()->system->logToConsole("killer struck at no target...", delay);
+  } else {
+    if (kill_target_fps == 1 && kill_target_id == killer_id) {
+      get_api()->system->logToConsole("killer self destructs");
+    } else {
+      get_api()->system->logToConsole("killer strikes { id:%d, fps: %d }!", kill_target_id, kill_target_fps);
+    }
+    fps_timer_stop(kill_target_id, kill_target_fps);
+  }
+  kill_target_id = killer_id;
+  kill_target_fps = 1;
+  delay = 1;
 }
 
 void run_tests(void) {
   PlaydateAPI* api = get_api();
 
-  // Setup
-  memory_pool* test = memory_pool_create(10, &create_test_item);
-  vector* v = vector_create(3);
-  for (uint8_t i = 0; i < 10; i++) {
-    test_item* item = memory_pool_next(test);
-    item->id = next_test_id++;
-    item->label = values[i];
-    vector_push(v, item);
-  };
-  vector_insert_at_index(v, &stack_item_1, 0);
-  vector_insert_at_index(v, &stack_item_2, 1);
-
-  // Vector
-  bsearch_result r = vector_bsearch(v, &compare8);
-  api->system->logToConsole(
-    "bsearch result: { id: %d, label: %s } at index: %d", 
-    ((test_item*)r.item)->id, 
-    ((test_item*)r.item)->label, 
-    r.index
-  );
-  vector_remove_at_index(v, r.index);
-  bsearch_result empty = vector_bsearch(v, &compare8);
-  api->system->logToConsole(
-    "bsearch result: %sNULL item at index: %d", 
-    empty.item ? "non-" : "",
-    empty.index
-  );
-  uint16_t length = vector_length(v);
-  for (uint8_t i = 0; i < length; i++) {
-    test_item* item = vector_item_at_index(v, i);
-    api->system->logToConsole("Vector item: { id: %d, label: %s }", item->id, item->label);
+  for (int i = 0; i < 6; i++) {
+    timer_ids[i] = fps_timer_start(&advance_animation, &test[i], test[i].fps, true);
   }
 
-  vector_destroy(v);
-  memory_pool_destroy(test);
+  kill_target_id = timer_ids[2];
+  kill_target_fps = 30;
+  delay = 2; 
+  killer_id = fps_timer_start(
+    &kill_animation,
+    NULL,
+    1 /* fps */,
+    true /* loop */
+  );
+
+  get_api()->system->logToConsole("Timers setup, with function pointers { advance_animation:%p, kill_animation:%p }", advance_animation, kill_animation);
 }

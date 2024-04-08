@@ -13,7 +13,14 @@
 #include "pd_api.h"
 
 #include "C/core/api-provider.h"
+#include "C/core/fps-timers.h"
 #include "C/test/manual-logs.h"
+
+int c_update_loop(lua_State *L) {
+  fps_timers_update();
+  get_api()->lua->pushNil();
+  return 1;
+}
 
 #ifdef _WINDLL
 __declspec(dllexport)
@@ -25,12 +32,23 @@ int eventHandler(
 ) {
 	(void)arg;
 
-	if ( event == kEventInitLua )
-	{
+	if (event == kEventInit) {
     set_api(playdate);
     playdate->system->resetElapsedTime();
     run_tests();
-	}
+	} 
+  else if (event == kEventInitLua) {
+		const char* err;
+		if (
+      !playdate->lua->addFunction(
+        c_update_loop, 
+        "cupdate", 
+        &err
+      )
+    ) {
+			playdate->system->logToConsole("%s:%i: addFunction failed, %s", __FILE__, __LINE__, err);
+    }
+  }  
 
 	return 0;
 }

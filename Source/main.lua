@@ -24,7 +24,10 @@ for i=1,100 do
   ant:add()
 end
 
+local engineUpdate = cupdate
+
 function playdate.update()
+  engineUpdate();
   sprite.update()
   timer.updateTimers()
 
