@@ -124,13 +124,13 @@ void* vector_remove_at_index(vector* v, uint16_t i) {
   return item;
 }
 
-bsearch_result vector_bsearch(vector* v, compare_fn compare) {
+bsearch_result vector_bsearch(vector* v, compare_fn compare, void* userdata) {
   void** array = v->array;
   int32_t start = 0;
   int32_t end = v->length-1;
   while(start <= end) {
     int32_t i = ((end - start) / 2) + start;
-    int8_t comparison = compare(array[i]);
+    int8_t comparison = compare(array[i], userdata);
     if (comparison < 0) {
       end = i-1;
     } else if (comparison > 0) {
