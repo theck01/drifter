@@ -12,9 +12,14 @@
 
 #include "pd_api.h"
 
+#include "C/core/sprite-animator.h"
 #include "C/core/api-provider.h"
 #include "C/core/fps-timers.h"
 #include "C/test/manual-logs.h"
+
+void update_sprite(LCDSprite* s) {
+  get_api()->sprite->setDrawMode(s, kDrawModeInverted);
+}
 
 int c_update_loop(lua_State *L) {
   fps_timers_update();
@@ -35,7 +40,7 @@ int eventHandler(
 	if (event == kEventInit) {
     set_api(playdate);
     playdate->system->resetElapsedTime();
-    run_tests();
+    // run_tests();
 	} 
   else if (event == kEventInitLua) {
 		const char* err;
@@ -48,6 +53,29 @@ int eventHandler(
     ) {
 			playdate->system->logToConsole("%s:%i: addFunction failed, %s", __FILE__, __LINE__, err);
     }
+
+    LCDSprite* ant_sprite = playdate->sprite->newSprite();
+    playdate->sprite->setUpdateFunction(ant_sprite, &update_sprite);
+    playdate->sprite->moveTo(ant_sprite, 100, 210);
+    playdate->sprite->setZIndex(ant_sprite, 1000);
+
+
+    LCDBitmapTable* ant_idle_animation = playdate->graphics->loadBitmapTable(
+      "img/ant-idle-right.gif",
+      &err
+    );
+    if (!ant_idle_animation) {
+      playdate->system->error("Could not load animation: %s", err);
+    }
+    sprite_animator* ant_animator = sprite_animator_create(
+      ant_sprite,
+      ant_idle_animation, 
+      12 /* fps */, 
+      0 /* starting_frame */
+    );
+
+    playdate->sprite->addSprite(ant_sprite);
+    sprite_animator_start(ant_animator);
   }  
 
 	return 0;
