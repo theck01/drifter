@@ -1,5 +1,6 @@
 
-#include "api-provider.h"
+#include "C/api.h"
+
 #include "fps-timers.h"
 
 #include "sprite-animator.h"
@@ -9,7 +10,7 @@ struct sprite_animator_struct {
   LCDBitmapTable* animation;
   uint8_t fps;
   uint8_t frame;
-  fps_timer_id timer_id;
+  gid_t timer_id;
   bool timer_active;
 };
 
@@ -36,7 +37,7 @@ sprite_animator* sprite_animator_create(
   s->sprite = sprite;
   s->animation = animation;
   s->fps=fps;
-  s->timer_id = INVALID_TIMER_ID;
+  s->timer_id = INVALID_GID;
   s->timer_active = false;
   s->frame = sprite_animator_show_frame(s, starting_frame);
   return s;
@@ -52,7 +53,7 @@ void sprite_animator_start(sprite_animator* s) {
     get_api()->system->error("Sprite animator is already running");
     return;
   }
-  if (s->timer_id == INVALID_TIMER_ID) {
+  if (s->timer_id == INVALID_GID) {
     s->timer_id = fps_timer_start(sprite_animator_tick, s, s->fps, true);
   } else {
     fps_timer_replace(s->timer_id, s->fps, sprite_animator_tick, s);

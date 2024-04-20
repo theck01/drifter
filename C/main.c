@@ -12,10 +12,10 @@
 
 #include "pd_api.h"
 
+#include "C/api.h"
 #include "C/core/sprite-animator.h"
-#include "C/core/api-provider.h"
 #include "C/core/fps-timers.h"
-#include "C/test/manual-logs.h"
+#include "C/test/fps-timers.test.h"
 
 void update_sprite(LCDSprite* s) {
   get_api()->sprite->setDrawMode(s, kDrawModeInverted);
@@ -76,6 +76,7 @@ int eventHandler(
 
     playdate->sprite->addSprite(ant_sprite);
     sprite_animator_start(ant_animator);
+    // fps_timers_run_tests();
   }  
 
 	return 0;

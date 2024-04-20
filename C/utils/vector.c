@@ -1,7 +1,7 @@
 
 #include <stdlib.h>
 
-#include "C/core/api-provider.h"
+#include "C/api.h"
 #include "C/macro.h"
 
 #include "vector.h"

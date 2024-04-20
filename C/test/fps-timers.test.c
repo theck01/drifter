@@ -1,9 +1,14 @@
 #include "pd_api.h"
 
-#include "C/core/api-provider.h"
+#include "C/api.h"
 #include "C/core/fps-timers.h"
 
-#include "manual-logs.h"
+#include "fps-timers.test.h"
+
+typedef struct pretend_animation_struct {
+  uint8_t fps;
+  char* label;
+} pretend_animation;
 
 static pretend_animation test[] = {
   { .fps = 1, .label = "1-frame" },
@@ -53,7 +58,7 @@ void kill_animation(void* _) {
   delay = 1;
 }
 
-void run_tests(void) {
+void fps_timers_run_tests(void) {
   PlaydateAPI* api = get_api();
 
   for (int i = 0; i < 6; i++) {

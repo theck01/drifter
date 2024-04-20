@@ -1,7 +1,5 @@
 
-#include "pd_api.h"
-
-#include "api-provider.h"
+#include "api.h"
 
 static PlaydateAPI* api = NULL;
 

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "C/core/api-provider.h"
+#include "C/api.h"
 
 #include "memory-pool.h"
 
