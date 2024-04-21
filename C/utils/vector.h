@@ -20,6 +20,14 @@ void vector_insert_at_index(vector* v, void* item, uint16_t i);
 // Removes the item at index i, shifting items after -1 position.
 void* vector_remove_at_index(vector* v, uint16_t i);
 
+typedef bool (*filter_fn)(void* vector_item, void* userdata);
+typedef void (*cleanup_fn)(void* vector_item);
+void vector_filter(
+  vector* v, 
+  filter_fn filter, 
+  cleanup_fn clean, 
+  void* userdata
+);
 
 // Should return 1 to search later in the vector, -1 to search earlier, and 0
 // for direct matches.

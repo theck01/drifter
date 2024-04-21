@@ -76,7 +76,7 @@ int eventHandler(
 
     playdate->sprite->addSprite(ant_sprite);
     sprite_animator_start(ant_animator);
-    // fps_timers_run_tests();
+    fps_timers_run_tests();
   }  
 
 	return 0;

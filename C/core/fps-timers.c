@@ -22,6 +22,7 @@ typedef struct callback_struct {
 
 static timer timer_by_fps[51];
 static bool initialized = false;
+static vector* unused_callbacks = NULL;
 
 void fps_timer_initialize_if_needed(void) {
   if (initialized) {
@@ -32,15 +33,32 @@ void fps_timer_initialize_if_needed(void) {
     timer_by_fps[i].fps = i;
     timer_by_fps[i].callbacks = NULL;
   }
+  unused_callbacks = vector_create(1);
 
   initialized = true;
+}
+
+static callback* callback_recycler_next(void) {
+  callback* c = (callback*)vector_pop(unused_callbacks);
+  if (!c) {
+    c = malloc(sizeof(callback));
+  }
+  if (!c) {
+    get_api()->system->error("Could not allocate memory for fps timer callback");
+  }
+  return c;
 }
 
 uint16_t time_to_frames(float time, uint8_t fps) {
   return (uint16_t)(time * fps);
 }
 
-gid_t fps_timer_start(callback_fn fn, void* customdata, uint8_t fps, bool loop) {
+gid_t fps_timer_start(
+  callback_fn fn, 
+  void* customdata, 
+  uint8_t fps, 
+  bool loop
+) {
   fps_timer_initialize_if_needed();
 
   fps = min(fps, MAX_FPS);
@@ -51,11 +69,7 @@ gid_t fps_timer_start(callback_fn fn, void* customdata, uint8_t fps, bool loop) 
     float now = get_api()->system->getElapsedTime();
     t->last_observed_frame = time_to_frames(now, fps);
   }
-  callback* c = malloc(sizeof(callback));
-  if (!c) {
-    get_api()->system->error("Could not allocate memory for fps timer callback");
-    return INVALID_GID;
-  }
+  callback* c = callback_recycler_next();
   c->id = getNextGID();
   c->fn = fn;
   c->customdata = customdata;
@@ -132,6 +146,14 @@ void fps_timer_stop(gid_t timer_id, uint8_t fps) {
   c->dead = true;
 }
 
+static bool fps_timers_is_dead(void* cb, void* _) {
+  return ((callback*)cb)->dead;
+}
+
+static void fps_timers_callback_cleanup(void* cb) {
+  vector_push(unused_callbacks, cb);
+}
+
 void fps_timers_update(void) {
   float now = get_api()->system->getElapsedTime();
   for (uint8_t fps=1; fps<=MAX_FPS; fps++) {
@@ -153,8 +175,16 @@ void fps_timers_update(void) {
         continue;
       }
       c->fn(c->customdata);
-      c->dead = !c->loop;
+      c->dead = c->dead || !c->loop;
     }
+
+    // Destroy all dead callbacks at the end of the update loop.
+    vector_filter(
+      t->callbacks, 
+      fps_timers_is_dead, 
+      fps_timers_callback_cleanup, 
+      NULL
+    );
 
     t->last_observed_frame = now_frame; 
   }

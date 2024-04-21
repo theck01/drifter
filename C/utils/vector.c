@@ -124,20 +124,43 @@ void* vector_remove_at_index(vector* v, uint16_t i) {
   return item;
 }
 
+void vector_filter(
+  vector* v, 
+  filter_fn filter, 
+  cleanup_fn clean, 
+  void* userdata
+) {
+  uint16_t di = 0;
+  for (uint16_t i=0; i < v->length; i++) {
+    if (filter(v->array[i], userdata)) {
+      clean(v->array[i]);
+    } else {
+      if (di < i) {
+        v->array[di] = v->array[i];
+      }
+      di++;
+    }
+  }
+  uint16_t new_length = di;
+  for (uint16_t i=new_length; i < v->length; i++) {
+    v->array[i] = NULL;
+  }
+  v->length = new_length;
+}
+
 bsearch_result vector_bsearch(vector* v, compare_fn compare, void* userdata) {
-  void** array = v->array;
   int32_t start = 0;
   int32_t end = v->length-1;
   while(start <= end) {
     int32_t i = ((end - start) / 2) + start;
-    int8_t comparison = compare(array[i], userdata);
+    int8_t comparison = compare(v->array[i], userdata);
     if (comparison < 0) {
       end = i-1;
     } else if (comparison > 0) {
       start = i+1;
     } else {
       return (bsearch_result) {
-        .item = array[i],
+        .item = v->array[i],
         .index = i
       };
     }
