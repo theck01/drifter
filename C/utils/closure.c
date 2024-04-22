@@ -47,8 +47,12 @@ closure* closure_create(void* context, closure_fn fn, closure_context_cleanup_fn
 void closure_call(closure* c, ...) {
   va_list args;
   va_start(args, c);
-  c->fn(c->context, args);
+  closure_vcall(c, args);
   va_end(args);
+}
+
+void closure_vcall(closure* c, va_list args) {
+  c->fn(c->context, args);
 }
 
 void closure_destroy(closure* c) {

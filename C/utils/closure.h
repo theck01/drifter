@@ -21,6 +21,7 @@ closure* closure_create(
 );
 
 void closure_call(closure* c, ...);
+void closure_vcall(closure* c, va_list args);
 
 void closure_destroy(closure* c);
 

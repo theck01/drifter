@@ -1,4 +1,5 @@
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <math.h>
 
@@ -126,15 +127,20 @@ void event_emitter_remove(event_emitter* e,  gid_t id) {
 }
 
 
-void event_emitter_fire(event_emitter* e, void* eventdata) {
+void event_emitter_fire(event_emitter* e, ...) {
+  va_list args;
+  va_start(args, e);
+
   // Recheck listener length on each loop iteration, callbacks can create 
   // eachother (but only mark dead not destroy, so i never has to reverse)
   for (uint16_t i=0; i < vector_length(e->listeners); i++) {
     callback* c = (callback*)vector_item_at_index(e->listeners, i);
     if (!c->dead) {
-      closure_call(c->closed_fn, eventdata);
+      closure_vcall(c->closed_fn, args);
     }
   }
+
+  va_end(args);
 
   // Recycle all dead callbacks at the end of the event firing.
   vector_filter(

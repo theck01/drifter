@@ -13,15 +13,18 @@
 #include "pd_api.h"
 
 #include "C/api.h"
-#include "C/core/sprite-animator.h"
+#include "C/core/crank-time.h"
 #include "C/core/fps-timers.h"
-#include "C/test/fps-timers.test.h"
+#include "C/core/sprite-animator.h"
+
+#include "C/test/crank-time.test.h"
 
 void update_sprite(LCDSprite* s) {
   get_api()->sprite->setDrawMode(s, kDrawModeInverted);
 }
 
 int c_update_loop(lua_State *L) {
+  crank_time_update();
   fps_timers_update();
   get_api()->lua->pushNil();
   return 1;
@@ -76,7 +79,7 @@ int eventHandler(
 
     playdate->sprite->addSprite(ant_sprite);
     sprite_animator_start(ant_animator);
-    fps_timers_run_tests();
+    crank_time_run_tests();
   }  
 
 	return 0;

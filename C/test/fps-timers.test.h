@@ -1,6 +1,6 @@
 
-#ifndef MANUAL_LOGS_TEST
-#define MANUAL_LOGS_TEST
+#ifndef FPS_TIMERS_TEST
+#define FPS_TIMERS_TEST
 
 void fps_timers_run_tests(void);
 
