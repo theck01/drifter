@@ -133,7 +133,7 @@ void vector_filter(
   uint16_t di = 0;
   for (uint16_t i=0; i < v->length; i++) {
     if (filter(v->array[i], userdata)) {
-      clean(v->array[i]);
+      clean(v->array[i], userdata);
     } else {
       if (di < i) {
         v->array[di] = v->array[i];

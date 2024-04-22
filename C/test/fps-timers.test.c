@@ -2,6 +2,7 @@
 
 #include "C/api.h"
 #include "C/core/fps-timers.h"
+#include "C/utils/closure.h"
 
 #include "fps-timers.test.h"
 
@@ -16,11 +17,18 @@ static pretend_animation test[] = {
   { .fps = 30, .label = "every-frame" },
   { .fps = 2, .label = "2-frame-b" },
   { .fps = 2, .label = "2-frame-c" },
+  { .fps = 4, .label = "4-frame" },
   { .fps = 12, .label = "12-frame" },
 };
-static uint32_t timer_ids[6];
+static uint32_t timer_ids[7];
 
-void advance_animation(void* animation) {
+static pretend_animation late_start[] = {
+  { .fps = 4, .label = "4-frame-rebirth" },
+  { .fps = 8, .label = "8-frame" },
+  { .fps = 16, .label = "16-frame" }
+};
+
+void advance_animation(void* animation, va_list _) {
   pretend_animation* a = (pretend_animation*)animation;
   get_api()->system->logToConsole(
     "Pretend animation \"%s\" advanced at  %d fps",
@@ -29,11 +37,10 @@ void advance_animation(void* animation) {
   );
 }
 
+static uint8_t stage_n = 1;
 static uint32_t killer_id = 7;
-static uint32_t kill_target_id = UINT32_MAX;
-static uint8_t kill_target_fps = 0;
-static int delay; 
-void kill_animation(void* _) {
+static int delay = 2; 
+void kill_animation(void* context, va_list args) {
   delay--;
   if (delay > 0) {
     get_api()->system->logToConsole("killer has %d more rounds to wait...", delay);
@@ -43,36 +50,44 @@ void kill_animation(void* _) {
     return;
   }
 
-  if (kill_target_fps == 0 || kill_target_id == UINT32_MAX) {
-    get_api()->system->logToConsole("killer struck at no target...", delay);
-  } else {
-    if (kill_target_fps == 1 && kill_target_id == killer_id) {
+  switch (stage_n) {
+    case 1:
+      get_api()->system->logToConsole("killer strikes { id:%d, fps: %d }!", timer_ids[2], 30);
+      fps_timer_stop(30, timer_ids[2]);
+      get_api()->system->logToConsole("killer strikes { id:%d, fps: %d }!", timer_ids[5], 4);
+      fps_timer_stop(4, timer_ids[5]);
+      delay = 2;
+      break;
+    case 2:
+      get_api()->system->logToConsole("killer creates new animations");
+      for (uint32_t i = 0; i < 3; i++) {
+        fps_timer_start(
+          late_start[i].fps,
+          closure_create(&late_start[i], advance_animation, NULL /* cleanup_fn */)
+        );
+      }
+      delay = 1;
+      break;
+    default:
       get_api()->system->logToConsole("killer self destructs");
-    } else {
-      get_api()->system->logToConsole("killer strikes { id:%d, fps: %d }!", kill_target_id, kill_target_fps);
-    }
-    fps_timer_stop(kill_target_id, kill_target_fps);
+      fps_timer_stop(1, killer_id);
+      break;
   }
-  kill_target_id = killer_id;
-  kill_target_fps = 1;
-  delay = 1;
+  stage_n++;
 }
 
 void fps_timers_run_tests(void) {
   PlaydateAPI* api = get_api();
 
-  for (int i = 0; i < 6; i++) {
-    timer_ids[i] = fps_timer_start(&advance_animation, &test[i], test[i].fps, true);
+  for (int i = 0; i < 7; i++) {
+    timer_ids[i] = fps_timer_start(
+      test[i].fps,
+      closure_create(&test[i], advance_animation, NULL /* cleanup_fn */)
+    );
   }
-
-  kill_target_id = timer_ids[2];
-  kill_target_fps = 30;
-  delay = 2; 
   killer_id = fps_timer_start(
-    &kill_animation,
-    NULL,
     1 /* fps */,
-    true /* loop */
+    closure_create(NULL /* context */, kill_animation, NULL /* cleanup */)
   );
 
   get_api()->system->logToConsole("Timers setup, with function pointers { advance_animation:%p, kill_animation:%p }", advance_animation, kill_animation);

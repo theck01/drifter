@@ -21,7 +21,7 @@ void vector_insert_at_index(vector* v, void* item, uint16_t i);
 void* vector_remove_at_index(vector* v, uint16_t i);
 
 typedef bool (*filter_fn)(void* vector_item, void* userdata);
-typedef void (*cleanup_fn)(void* vector_item);
+typedef void (*cleanup_fn)(void* vector_item, void* userdata);
 void vector_filter(
   vector* v, 
   filter_fn filter, 
