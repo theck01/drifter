@@ -2,10 +2,10 @@
 #ifndef MEMORY_RECYCLER
 #define MEMORY_RECYCLER
 
+#include "types.h"
+
 typedef struct memory_recycler_struct memory_recycler;
 
-typedef void* (*allocator_fn)(void);
-typedef void (*destructor_fn)(void* item);
 memory_recycler* memory_recycler_create(
   allocator_fn allocator, 
   destructor_fn destructor

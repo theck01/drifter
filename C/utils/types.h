@@ -4,6 +4,10 @@
 
 #include <stdint.h>
 
+typedef void* (*allocator_fn)(void);
+typedef void (*destructor_fn)(void *);
+typedef void (*copy_fn)(void* source, void* destination);
+
 typedef uint16_t gid_t;
 
 static const gid_t INVALID_GID = UINT16_MAX;

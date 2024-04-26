@@ -2,10 +2,15 @@
 #ifndef MEMORY_POOL
 #define MEMORY_POOL
 
+#include "types.h"
+
 typedef struct memory_pool_struct memory_pool;
 
-typedef void* (*element_allocator)(void);
-memory_pool* memory_pool_create(uint8_t size, element_allocator allocator);
+memory_pool* memory_pool_create(
+  uint16_t size, 
+  allocator_fn allocator,
+  destructor_fn destructor
+);
 
 void* memory_pool_next(memory_pool* array);
 

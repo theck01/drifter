@@ -2,6 +2,8 @@
 #ifndef HISTORY_STACK
 #define HISTORY_STACK
 
+#include <stdint.h>
+
 typedef struct history_stack_struct history_stack;
 
 history_stack* history_stack_create(uint8_t size);

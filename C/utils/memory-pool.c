@@ -8,38 +8,44 @@
 
 struct memory_pool_struct {
   void** a;
-  uint8_t i;
-  uint8_t size;
+  uint16_t i;
+  uint16_t size;
+  destructor_fn destructor;
 };
 
-memory_pool* memory_pool_create(uint8_t size, element_allocator allocator) {
-  memory_pool* new_array = malloc(sizeof(memory_pool));
-  if (new_array == NULL) {
-    get_api()->system->error("Could not allocate struct for new cyclic array");
+memory_pool* memory_pool_create(
+  uint16_t size, 
+  allocator_fn allocator,
+  destructor_fn destructor
+) {
+  memory_pool* pool = malloc(sizeof(memory_pool));
+  if (pool == NULL) {
+    get_api()->system->error("Could not allocate struct for new memory pool");
   }
-  new_array->i = 0;
-  new_array->size = size;
-  new_array->a = malloc(size * sizeof(void *));
-  if (new_array->a == NULL) {
+  pool->i = 0;
+  pool->size = size;
+  pool->destructor = destructor;
+  pool->a = malloc(size * sizeof(void *));
+  if (pool->a == NULL) {
     get_api()->system->error("Could not allocate child array in cyclic array");
   }
-  for (uint8_t i=0; i < size; i++) {
-    new_array->a[i] = (*allocator)();
+  for (uint16_t i=0; i < size; i++) {
+    pool->a[i] = (*allocator)();
   }
-  return new_array;
+  return pool;
 }
 
-void* memory_pool_next(memory_pool* array) {
-  void * element = array->a[array->i];
-  array->i = array->i + 1 < array->size ? array->i + 1 : 0;
+void* memory_pool_next(memory_pool* pool) {
+  void * element = pool->a[pool->i];
+  pool->i = pool->i + 1 < pool->size ? pool->i + 1 : 0;
   return element;
 }
 
-void memory_pool_destroy(memory_pool* array) {
-  for (uint8_t i = 0; i < array->size; i++) {
-    free(array->a[i]);
+void memory_pool_destroy(memory_pool* pool) {
+  for (uint16_t i = 0; i < pool->size; i++) {
+    pool->destructor(pool->a[i]);
   }
-  free(array->a);
-  free(array);
+  free(pool->a);
+  free(pool);
 }
 
