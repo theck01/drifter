@@ -10,6 +10,6 @@ void log_crank_diff(void* context, va_list args) {
 
 void crank_time_run_tests(void) {
   crank_time_add_listener(
-    closure_create(NULL /* context */, log_crank_diff, NULL /* cleanup */)
+    closure_create(NULL /* context */, log_crank_diff)
   );
 }

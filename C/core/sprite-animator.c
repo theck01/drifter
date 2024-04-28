@@ -52,7 +52,7 @@ void sprite_animator_start(sprite_animator* s) {
   }
   s->timer_id = fps_timer_start(
     s->fps, 
-    closure_create(s, sprite_animator_tick, NULL /* cleanup_fn */)
+    closure_create(s, sprite_animator_tick)
   );
 }
 

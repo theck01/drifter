@@ -34,7 +34,15 @@ static void initialize_if_needed(void) {
   }
 }
 
-closure* closure_create(void* context, closure_fn fn, closure_context_cleanup_fn cleanup_fn) {
+closure* closure_create(void* context, closure_fn fn) {
+  return closure_create_with_cleanup(context, fn, NULL /* cleanup */);
+}
+
+closure* closure_create_with_cleanup(
+  void* context, 
+  closure_fn fn, 
+  closure_context_cleanup_fn cleanup_fn
+) {
   initialize_if_needed();
   closure* c = (closure*) memory_recycler_get(closure_recycler);
   c->context = context;

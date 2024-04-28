@@ -58,9 +58,9 @@ static void actor_crank_update(void* context, va_list args) {
 
 actor* actor_create(
   char* label,
-  copy_fn model_copy,
   allocator_fn model_allocator,
-  destructor_fn model_destructor
+  destructor_fn model_destructor,
+  copy_fn model_copy
 ) {
   actor* a = malloc(sizeof(actor));
   if (!a) {
@@ -110,7 +110,7 @@ void actor_start_updates(
   closure_call(apply, a->current_state, NULL);
 
   a->crank_time_id = crank_time_add_listener(
-    closure_create(a, actor_crank_update, NULL /* context cleanup fn */)
+    closure_create(a, actor_crank_update)
   );
 }
 

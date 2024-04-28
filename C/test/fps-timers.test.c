@@ -63,7 +63,7 @@ void kill_animation(void* context, va_list args) {
       for (uint32_t i = 0; i < 3; i++) {
         fps_timer_start(
           late_start[i].fps,
-          closure_create(&late_start[i], advance_animation, NULL /* cleanup_fn */)
+          closure_create(&late_start[i], advance_animation)
         );
       }
       delay = 1;
@@ -82,12 +82,12 @@ void fps_timers_run_tests(void) {
   for (int i = 0; i < 7; i++) {
     timer_ids[i] = fps_timer_start(
       test[i].fps,
-      closure_create(&test[i], advance_animation, NULL /* cleanup_fn */)
+      closure_create(&test[i], advance_animation)
     );
   }
   killer_id = fps_timer_start(
     1 /* fps */,
-    closure_create(NULL /* context */, kill_animation, NULL /* cleanup */)
+    closure_create(NULL /* context */, kill_animation)
   );
 
   get_api()->system->logToConsole("Timers setup, with function pointers { advance_animation:%p, kill_animation:%p }", advance_animation, kill_animation);
