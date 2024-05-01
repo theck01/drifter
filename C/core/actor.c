@@ -14,7 +14,7 @@ struct actor_struct {
   history_stack* undo;
   history_stack* redo;
   memory_pool* model_pool;
-  void* current_state;
+  void* current_model;
   copy_fn model_copy;
   closure* plan;
   closure* apply;
@@ -25,29 +25,27 @@ static void actor_advance(actor* a) {
   void* model = history_stack_pop(a->redo);
   if (!model) {
     model = memory_pool_next(a->model_pool);
-    a->model_copy(a->current_state, model);
-    closure_call(a->plan, model);
+    a->model_copy(a->current_model, model);
+    closure_call(a->plan, model, a->current_model);
   }
 
-  closure_call(a->apply, model, a->current_state);
-  history_stack_push(a->redo, model);
-  a->current_state = model;
+  closure_call(a->apply, model, a->current_model);
+  history_stack_push(a->undo, model);
+  a->current_model = model;
   return;
 }
 
 static void actor_reverse(actor* a) {
   void* model = history_stack_pop(a->undo);
   if (model) {
-    closure_call(a->apply, model, a->current_state);
+    closure_call(a->apply, model, a->current_model);
     history_stack_push(a->redo, model);
-    a->current_state = model;
+    a->current_model = model;
   }
 }
 
 static void actor_crank_update(void* context, va_list args) {
   int time_diff = va_arg(args, int);
-  get_api()->system->logToConsole("Crank changed by %d ticks", time_diff);
-
   for (int i = time_diff; i > 0; i--) {
     actor_advance((actor*) context);
   }
@@ -78,7 +76,7 @@ actor* actor_create(
     model_allocator, 
     model_destructor
   );
-  a->current_state = memory_pool_next(a->model_pool);
+  a->current_model = memory_pool_next(a->model_pool);
   a->model_copy = model_copy;
   a->plan = NULL;
   a->apply = NULL;
@@ -104,10 +102,10 @@ void actor_start_updates(
   a->plan = plan;
   a->apply = apply;
 
-  closure_call(init, a->current_state);
+  closure_call(init, a->current_model);
   closure_destroy(init);
 
-  closure_call(apply, a->current_state, NULL);
+  closure_call(apply, a->current_model, NULL);
 
   a->crank_time_id = crank_time_add_listener(
     closure_create(a, actor_crank_update)
@@ -131,7 +129,7 @@ void actor_destroy(actor* a) {
     actor_stop_updates(a);
   }
 
-  a->current_state = NULL;
+  a->current_model = NULL;
   memory_pool_destroy(a->model_pool);
   a->model_pool = NULL;
 

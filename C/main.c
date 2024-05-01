@@ -13,15 +13,11 @@
 #include "pd_api.h"
 
 #include "C/api.h"
+#include "C/actors/ant.h"
 #include "C/core/crank-time.h"
 #include "C/core/fps-timers.h"
-#include "C/core/sprite-animator.h"
-
-#include "C/test/crank-time.test.h"
-
-void update_sprite(LCDSprite* s) {
-  get_api()->sprite->setDrawMode(s, kDrawModeInverted);
-}
+#include "C/utils/random.h"
+#include "C/utils/vector.h"
 
 int c_update_loop(lua_State *L) {
   crank_time_update();
@@ -29,6 +25,9 @@ int c_update_loop(lua_State *L) {
   get_api()->lua->pushNil();
   return 1;
 }
+
+static vector* ant_vector = NULL;
+static PlaydateAPI* api = NULL;
 
 #ifdef _WINDLL
 __declspec(dllexport)
@@ -42,6 +41,8 @@ int eventHandler(
 
 	if (event == kEventInit) {
     set_api(playdate);
+    api = NULL;
+    srand(playdate->system->getSecondsSinceEpoch(NULL));
     playdate->system->resetElapsedTime();
     // run_tests();
 	} 
@@ -57,29 +58,11 @@ int eventHandler(
 			playdate->system->logToConsole("%s:%i: addFunction failed, %s", __FILE__, __LINE__, err);
     }
 
-    LCDSprite* ant_sprite = playdate->sprite->newSprite();
-    playdate->sprite->setUpdateFunction(ant_sprite, &update_sprite);
-    playdate->sprite->moveTo(ant_sprite, 100, 210);
-    playdate->sprite->setZIndex(ant_sprite, 1000);
-
-
-    LCDBitmapTable* ant_idle_animation = playdate->graphics->loadBitmapTable(
-      "img/ant-idle-right.gif",
-      &err
-    );
-    if (!ant_idle_animation) {
-      playdate->system->error("Could not load animation: %s", err);
+    ant_vector = vector_create(100);
+    for (uint8_t i=0; i<100; i++) {
+      ant* a = ant_create(random_uint(20, 380), random_uint(20, 220));
+      vector_push(ant_vector, a);
     }
-    sprite_animator* ant_animator = sprite_animator_create(
-      ant_sprite,
-      ant_idle_animation, 
-      12 /* fps */, 
-      0 /* starting_frame */
-    );
-
-    playdate->sprite->addSprite(ant_sprite);
-    sprite_animator_start(ant_animator);
-    crank_time_run_tests();
   }  
 
 	return 0;

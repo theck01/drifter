@@ -7,6 +7,7 @@
 #include "C/utils/closure.h"
 #include "C/utils/memory-recycler.h"
 #include "C/utils/random.h"
+#include "C/utils/types.h"
 
 #include "ant.h"
 
@@ -14,6 +15,7 @@
 // TYPES & CONST
 
 static char* ANT_LABEL = "ANT";
+// MUST BE POWER OF 2
 static const uint8_t MAX_SPEED_PX = 8;
 
 typedef enum {
@@ -33,6 +35,7 @@ typedef struct ant_model_struct {
   orientation_e orientation;
   uint8_t speed;
   uint8_t ticks_to_next_decision;
+  gid_t id;
 } ant_model;
 
 struct ant_struct {
@@ -49,6 +52,7 @@ void* ant_model_allocator(void) {
   if (!am) {
     get_api()->system->error("Could not allocate memory for ant model");
   }
+  am->id = getNextGID();
   return am;
 }
 
@@ -64,7 +68,20 @@ void ant_model_copy(void* source, void* dest) {
   amd->action = ams->action;
   amd->orientation = ams->orientation;
   amd->speed = ams->speed;
-  amd->ticks_to_next_decision = ams->speed;
+  amd->ticks_to_next_decision = ams->ticks_to_next_decision;
+}
+
+void ant_model_print(ant_model* am) {
+  get_api()->system->logToConsole(
+    "{ x: %f, y: %f, action: %d, orientation: %d, speed: %d, ticks_to_next_decision: %d, id: %d }", 
+    am->x, 
+    am->y, 
+    am->action, 
+    am->orientation, 
+    am->speed, 
+    am->ticks_to_next_decision,
+    am->id
+  );
 }
 
 
@@ -114,7 +131,10 @@ static void load_animations_if_needed(void) {
 
 // ANT LOGIC
 
-void ant_update(LCDSprite* s) {};
+void ant_update(LCDSprite* s) {
+ // Draw inverted for debuging vs lua ant
+ //get_api()->sprite->setDrawMode(s, kDrawModeInverted);
+};
 
 void ant_init(void* initial_model, va_list args) {
   void* model_to_init = va_arg(args, void*);
@@ -125,12 +145,58 @@ void ant_plan(void* self, va_list args) {
   ant* a = (ant*)a;
   ant_model* to_update = va_arg(args, ant_model*);
   ant_model* current_state = va_arg(args, ant_model*);
+
+  if (current_state->action == WALK) {
+    int16_t velocity = current_state->speed * 
+      (current_state->orientation == RIGHT ? 1 : -1);
+    to_update->x += velocity;
+
+    if (current_state->ticks_to_next_decision < 4) {
+      to_update->speed >>= 1;
+    } else if (current_state->speed < MAX_SPEED_PX) {
+      to_update->speed <<= 1;
+    }
+  }
+
+  if (current_state->ticks_to_next_decision == 0) {
+    to_update->action = randomf() > 0.5f ? WALK : IDLE;
+    if (to_update->action == WALK) {
+      to_update->speed = 1;
+    }
+    to_update->orientation = randomf() > 0.5f ? LEFT : RIGHT;
+    to_update->ticks_to_next_decision = random_uint(15,60);
+  }
+  to_update->ticks_to_next_decision--;
 }
 
 void ant_apply(void* self, va_list args) {
-  ant* a = (ant*)a;
+  PlaydateAPI* api = get_api();
+  ant* a = (ant*)self;
   ant_model* current_model = va_arg(args, ant_model*);
   ant_model* prev_model = va_arg(args, ant_model*);
+
+  if (
+    !prev_model || 
+    current_model->x != prev_model->x || 
+    current_model->y != prev_model->y
+  ) {
+    api->sprite->moveTo(a->sprite, current_model->x, current_model->y);
+  }
+  if (!prev_model || current_model->action != prev_model->action) {
+    sprite_animator_set_animation_and_frame(
+      a->animator, 
+      ant_animations[current_model->action][current_model->orientation],
+      0 /* starting frame */
+    );
+  } else if (
+    !prev_model || 
+    current_model->orientation != prev_model->orientation
+  ) {
+    sprite_animator_set_animation(
+      a->animator, 
+      ant_animations[current_model->action][current_model->orientation]
+    );
+  }
 }
 
 ant* ant_create(float x, float y) {
@@ -159,7 +225,9 @@ ant* ant_create(float x, float y) {
 
   a->sprite = api->sprite->newSprite();
   api->sprite->setUpdateFunction(a->sprite, &ant_update);
+  api->sprite->setZIndex(a->sprite, 1000);
   api->sprite->moveTo(a->sprite, x, y);
+  api->sprite->addSprite(a->sprite);
 
   a->animator = sprite_animator_create(
     a->sprite,
@@ -167,6 +235,7 @@ ant* ant_create(float x, float y) {
     12 /* fps */, 
     0 /* starting_frame */
   );
+  sprite_animator_start(a->animator);
 
   actor_start_updates(
     a->self,

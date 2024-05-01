@@ -1,6 +1,7 @@
 
 #include <stdlib.h>
 
+#include "C/api.h"
 #include "random.h"
 
 float randomf(void) {
@@ -9,6 +10,6 @@ float randomf(void) {
 }
 
 uint16_t random_uint(uint16_t min, uint16_t max) {
-  float frand = rand();
+  float frand = randomf();
   return min + (uint16_t)(frand * (max - min));
 }

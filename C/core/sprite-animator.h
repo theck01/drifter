@@ -22,6 +22,10 @@ void sprite_animator_stop(sprite_animator* s);
 
 void sprite_animator_set_animation(
   sprite_animator* s, 
+  LCDBitmapTable* animation
+);
+void sprite_animator_set_animation_and_frame(
+  sprite_animator* s, 
   LCDBitmapTable* animation, 
   uint8_t starting_frame
 );
