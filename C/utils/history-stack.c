@@ -8,11 +8,11 @@
 
 struct history_stack_struct {
 	void** stack;
-	uint8_t i;	
-	uint8_t size;
+	uint16_t i;	
+	uint16_t size;
 };
 
-history_stack* history_stack_create(uint8_t size) {
+history_stack* history_stack_create(uint16_t size) {
   history_stack* s = malloc(sizeof(history_stack));
   if (s == NULL) {
     get_api()->system->error("Could not allocate struct for new history stack");
@@ -23,7 +23,7 @@ history_stack* history_stack_create(uint8_t size) {
   if (s->stack == NULL) {
     get_api()->system->error("Could not allocate child array in history stack");
   }
-  for (uint8_t i=0; i < size; i++) {
+  for (uint16_t i=0; i < size; i++) {
     s->stack[i] = NULL;
   }
   return s;
@@ -35,7 +35,7 @@ void history_stack_push(history_stack* s, void* item) {
 }
 
 void* history_stack_pop(history_stack* s) {
-	uint8_t prev = s->i > 0 ? s->i - 1 : s->size - 1;
+	uint16_t prev = s->i > 0 ? s->i - 1 : s->size - 1;
 	void* item = s->stack[prev];
 	if (!item) {
 		return NULL;
