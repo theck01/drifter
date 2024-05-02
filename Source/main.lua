@@ -18,3 +18,13 @@ function playdate.update()
 
   drawFPS(0, 0)
 end
+
+if playdate.isSimulator then
+  local isDestroyed = false
+  function playdate.keyPressed(key)
+    if key == 'd' and not isDestroyed then
+      destroyAnts()
+      isDestroyed = true
+    end
+  end
+end

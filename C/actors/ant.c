@@ -2,13 +2,13 @@
 #include <stdbool.h>
 
 #include "C/api.h"
-#include "C/core/actor.h"
 #include "C/core/sprite-animator.h"
 #include "C/utils/closure.h"
 #include "C/utils/memory-recycler.h"
 #include "C/utils/random.h"
 #include "C/utils/types.h"
 
+#include "actor.h"
 #include "ant.h"
 
 
@@ -35,13 +35,13 @@ typedef struct ant_model_struct {
   orientation_e orientation;
   uint8_t speed;
   uint8_t ticks_to_next_decision;
-  gid_t id;
 } ant_model;
 
 struct ant_struct {
   actor* self;
   LCDSprite* sprite;
   sprite_animator* animator;
+  gid_t id;
 };
 
 
@@ -52,7 +52,6 @@ void* ant_model_allocator(void) {
   if (!am) {
     get_api()->system->error("Could not allocate memory for ant model");
   }
-  am->id = getNextGID();
   return am;
 }
 
@@ -73,14 +72,13 @@ void ant_model_copy(void* source, void* dest) {
 
 void ant_model_print(ant_model* am) {
   get_api()->system->logToConsole(
-    "{ x: %f, y: %f, action: %d, orientation: %d, speed: %d, ticks_to_next_decision: %d, id: %d }", 
+    "{ x: %f, y: %f, action: %d, orientation: %d, speed: %d, ticks_to_next_decision: %d }", 
     am->x, 
     am->y, 
     am->action, 
     am->orientation, 
     am->speed, 
-    am->ticks_to_next_decision,
-    am->id
+    am->ticks_to_next_decision
   );
 }
 
@@ -216,6 +214,8 @@ ant* ant_create(float x, float y) {
     .ticks_to_next_decision = random_uint(15, 60)
   };
 
+  a->id = getNextGID();
+
   a->self = actor_create(
     ANT_LABEL,
     ant_model_allocator,
@@ -248,8 +248,10 @@ ant* ant_create(float x, float y) {
 }
 
 void ant_destroy(ant* a) {
+  PlaydateAPI* api = get_api();
   actor_destroy(a->self);  
-  get_api()->sprite->freeSprite(a->sprite);
   sprite_animator_destroy(a->animator);
+  api->sprite->removeSprite(a->sprite);
+  api->sprite->freeSprite(a->sprite);
   free(a);
 }

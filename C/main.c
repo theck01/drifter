@@ -17,17 +17,29 @@
 #include "C/core/crank-time.h"
 #include "C/core/fps-timers.h"
 #include "C/utils/random.h"
+#include "C/utils/types.h"
 #include "C/utils/vector.h"
+
+static vector* ant_vector = NULL;
+static PlaydateAPI* api = NULL;
 
 int c_update_loop(lua_State *L) {
   crank_time_update();
   fps_timers_update();
-  get_api()->lua->pushNil();
+  api->lua->pushNil();
   return 1;
 }
 
-static vector* ant_vector = NULL;
-static PlaydateAPI* api = NULL;
+int destroy_ants(lua_State* L) {
+  ant* a = (ant*)vector_pop(ant_vector);
+  while (a) {
+    ant_destroy(a);
+    a = (ant*)vector_pop(ant_vector);
+  }
+  vector_destroy(ant_vector);
+  api->lua->pushNil();
+  return 1;
+}
 
 #ifdef _WINDLL
 __declspec(dllexport)
@@ -37,25 +49,33 @@ int eventHandler(
   PDSystemEvent event, 
   uint32_t arg
 ) {
-	(void)arg;
+  (void)arg;
 
-	if (event == kEventInit) {
+  if (event == kEventInit) {
     set_api(playdate);
-    api = NULL;
+    api = playdate;
     srand(playdate->system->getSecondsSinceEpoch(NULL));
     playdate->system->resetElapsedTime();
     // run_tests();
-	} 
+  } 
   else if (event == kEventInitLua) {
-		const char* err;
-		if (
-      !playdate->lua->addFunction(
-        c_update_loop, 
-        "cupdate", 
-        &err
-      )
-    ) {
-			playdate->system->logToConsole("%s:%i: addFunction failed, %s", __FILE__, __LINE__, err);
+    const char* err;
+    if (!playdate->lua->addFunction(c_update_loop, "cupdate", &err)) {
+      playdate->system->logToConsole(
+        "%s:%i: addFunction failed, %s", 
+        __FILE__, 
+        __LINE__, 
+        err
+      );
+    }
+
+    if (!playdate->lua->addFunction(destroy_ants, "destroyAnts", &err)) {
+      playdate->system->logToConsole(
+        "%s:%i: addFunction failed, %s", 
+        __FILE__, 
+        __LINE__, 
+        err
+      );
     }
 
     ant_vector = vector_create(100);
@@ -65,5 +85,5 @@ int eventHandler(
     }
   }  
 
-	return 0;
+  return 0;
 }
