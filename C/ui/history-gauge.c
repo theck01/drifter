@@ -12,8 +12,32 @@
 
 #include "history-gauge.h"
 
+
+// CONST
+
+// Bacground Bounds (BB)
+const PDRect BB = { .x = 388, .y = 0, .width = 12, .height = 240 };
 // Foreground Relative Bounds (FRB) vs background
 const PDRect FRB = { .x = 4, .y = 4, .width = 4, .height = 232 };
+
+const float CRANK_ANIMATION_OFFSETS[] = {
+  16,
+  16,
+  16,
+  11,
+  5,
+  1,
+  -1,
+  -3,
+  -4,
+  -3,
+  -1,
+  0
+};
+const uint8_t CRANK_ANIMATION_DURATION = 12;
+
+
+// DATA TYPES
 
 typedef struct gauge_struct {
   uint16_t ticks_remaining;
@@ -31,6 +55,9 @@ static gauge history_gauge = {
   .crank_id = INVALID_GID
 };
 LCDBitmap* background_img;
+
+
+// SPRITE FNS
 
 void noop_update(LCDSprite* s) {}
 
@@ -75,6 +102,9 @@ void draw_gauge_bar(LCDSprite* s, PDRect bounds, PDRect dirty_rect) {
   }
 }
 
+
+// HISTORY GAUGE
+
 void load_sprites(void) {
   PlaydateAPI* api = get_api();
 
@@ -99,6 +129,8 @@ void load_sprites(void) {
     kBitmapUnflipped
   );
   api->sprite->setUpdateFunction(history_gauge.background, &noop_update);
+  api->sprite->setVisible(history_gauge.background, 0);
+  api->sprite->addSprite(history_gauge.background);
 
   history_gauge.foreground = api->sprite->newSprite();
   api->sprite->setCenter(history_gauge.foreground, 0, 0);
@@ -106,10 +138,17 @@ void load_sprites(void) {
   api->sprite->setSize(history_gauge.foreground, FRB.width, FRB.height);
   api->sprite->setDrawFunction(history_gauge.foreground, &draw_gauge_bar);
   api->sprite->setUpdateFunction(history_gauge.foreground, &noop_update);
+  api->sprite->setVisible(history_gauge.foreground, 0);
+  api->sprite->addSprite(history_gauge.foreground);
 }
 
 static void gauge_crank_update(void* gauge, va_list args) {
+  PlaydateAPI* api = get_api();
   int time_diff = va_arg(args, int);
+  bool was_showing = 
+    history_gauge.ticks_remaining < history_gauge.potential_size;
+  int past_delta = 
+    history_gauge.potential_size - history_gauge.ticks_remaining;
 
   history_gauge.ticks_remaining = min(
     max(history_gauge.ticks_remaining + time_diff, 0), 
@@ -120,7 +159,50 @@ static void gauge_crank_update(void* gauge, va_list args) {
     history_gauge.potential_size
   );
 
-  get_api()->sprite->markDirty(history_gauge.foreground);
+  int delta = 
+    history_gauge.potential_size - history_gauge.ticks_remaining;
+  if (delta) {
+    if (!was_showing) {
+      api->sprite->setVisible(history_gauge.background, 1);
+      api->sprite->moveTo(
+        history_gauge.background, 
+        BB.x + CRANK_ANIMATION_OFFSETS[0], 
+        0
+      );
+
+      api->sprite->setVisible(history_gauge.foreground, 1);
+      api->sprite->moveTo(
+        history_gauge.foreground, 
+        BB.x + FRB.x  + CRANK_ANIMATION_OFFSETS[0], 
+        FRB.y
+      );
+    }
+
+    if (delta < CRANK_ANIMATION_DURATION) {
+      api->sprite->moveTo(
+        history_gauge.background, 
+        BB.x + CRANK_ANIMATION_OFFSETS[delta], 
+        0
+      );
+      api->sprite->moveTo(
+        history_gauge.foreground, 
+        BB.x + FRB.x + CRANK_ANIMATION_OFFSETS[delta], 
+        FRB.y
+      );
+    } else if (past_delta < CRANK_ANIMATION_DURATION) {
+      api->sprite->moveTo(history_gauge.background, BB.x, 0);
+      api->sprite->moveTo(history_gauge.foreground, BB.x + FRB.x, FRB.y);
+    }
+  } else {
+    if (was_showing) {
+      api->sprite->setVisible(history_gauge.background, 0);
+      api->sprite->setVisible(history_gauge.foreground, 0);
+    }
+  }
+
+  if (delta || past_delta) {
+    api->sprite->markDirty(history_gauge.foreground);
+  }
 }
 
 void history_gauge_connect(void) {
@@ -133,16 +215,6 @@ void history_gauge_connect(void) {
   if (!history_gauge.background || !history_gauge.foreground) {
     load_sprites();
   }
-
-  api->sprite->moveTo(history_gauge.background, 400 - 12, 0);
-  api->sprite->addSprite(history_gauge.background);
-
-  api->sprite->moveTo(
-    history_gauge.foreground, 
-    400 - 12 + FRB.x, 
-    FRB.y
-  );
-  api->sprite->addSprite(history_gauge.foreground);
 
   history_gauge.crank_id = crank_time_add_listener(
     closure_create(&history_gauge, gauge_crank_update)
@@ -157,6 +229,6 @@ void history_gauge_disconnect(void) {
 
   crank_time_remove_listener(history_gauge.crank_id);
   history_gauge.crank_id = INVALID_GID;
-  api->sprite->removeSprite(history_gauge.background);
-  api->sprite->removeSprite(history_gauge.foreground);
+  api->sprite->setVisible(history_gauge.background, 0);
+  api->sprite->setVisible(history_gauge.foreground, 0);
 }
