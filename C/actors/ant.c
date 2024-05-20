@@ -225,7 +225,6 @@ ant* ant_create(float x, float y) {
 
   a->sprite = api->sprite->newSprite();
   api->sprite->setUpdateFunction(a->sprite, &ant_update);
-  api->sprite->setZIndex(a->sprite, 1000);
   api->sprite->moveTo(a->sprite, x, y);
   api->sprite->addSprite(a->sprite);
 

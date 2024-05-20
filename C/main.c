@@ -16,6 +16,7 @@
 #include "C/actors/ant.h"
 #include "C/core/crank-time.h"
 #include "C/core/fps-timers.h"
+#include "C/ui/history-gauge.h"
 #include "C/utils/random.h"
 #include "C/utils/types.h"
 #include "C/utils/vector.h"
@@ -83,6 +84,8 @@ int eventHandler(
       ant* a = ant_create(random_uint(20, 380), random_uint(20, 220));
       vector_push(ant_vector, a);
     }
+
+    history_gauge_connect();
   }  
 
   return 0;
