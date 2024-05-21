@@ -10,6 +10,7 @@ local engineUpdate = cupdate
 
 function playdate.update()
   engineUpdate();
+  -- Game expects sprite update methods to be called after main loop
   sprite.update()
 
   if isCrankDocked() then

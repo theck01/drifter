@@ -8,6 +8,7 @@
 #include "C/core/crank-time.h"
 #include "C/utils/closure.h"
 #include "C/utils/geometry.h"
+#include "C/utils/random.h"
 #include "C/utils/types.h"
 
 #include "history-gauge.h"
@@ -42,6 +43,7 @@ const uint8_t CRANK_ANIMATION_DURATION = 12;
 typedef struct gauge_struct {
   uint16_t ticks_remaining;
   uint16_t potential_size;
+  bool did_crank_this_frame;
   LCDSprite* background;
   LCDSprite* foreground;
   gid_t crank_id;
@@ -50,6 +52,7 @@ typedef struct gauge_struct {
 static gauge history_gauge = {
   .ticks_remaining = 0,
   .potential_size = 0,
+  .did_crank_this_frame = false,
   .background = NULL,
   .foreground = NULL,
   .crank_id = INVALID_GID
@@ -59,7 +62,19 @@ LCDBitmap* background_img;
 
 // SPRITE FNS
 
-void noop_update(LCDSprite* s) {}
+void maybe_correct_no_history_shake(LCDSprite* s) {
+  if (
+    !history_gauge.did_crank_this_frame &&
+    history_gauge.ticks_remaining == 0
+  ) {
+    if (s == history_gauge.background) {
+      get_api()->sprite->moveTo(s, BB.x, 0);
+    } else {
+      get_api()->sprite->moveTo(s, BB.x + FRB.x, FRB.y);
+    }
+  }
+  history_gauge.did_crank_this_frame = false;
+}
 
 void draw_gauge_bar(LCDSprite* s, PDRect bounds, PDRect dirty_rect) {
   PlaydateAPI* api = get_api();
@@ -128,7 +143,10 @@ void load_sprites(void) {
     background_img, 
     kBitmapUnflipped
   );
-  api->sprite->setUpdateFunction(history_gauge.background, &noop_update);
+  api->sprite->setUpdateFunction(
+    history_gauge.background, 
+    &maybe_correct_no_history_shake
+  );
   api->sprite->setVisible(history_gauge.background, 0);
   api->sprite->addSprite(history_gauge.background);
 
@@ -137,7 +155,10 @@ void load_sprites(void) {
   api->sprite->setZIndex(history_gauge.foreground, HUD_Z_INDEX);
   api->sprite->setSize(history_gauge.foreground, FRB.width, FRB.height);
   api->sprite->setDrawFunction(history_gauge.foreground, &draw_gauge_bar);
-  api->sprite->setUpdateFunction(history_gauge.foreground, &noop_update);
+  api->sprite->setUpdateFunction(
+    history_gauge.foreground, 
+    &maybe_correct_no_history_shake
+  );
   api->sprite->setVisible(history_gauge.foreground, 0);
   api->sprite->addSprite(history_gauge.foreground);
 }
@@ -158,6 +179,7 @@ static void gauge_crank_update(void* gauge, va_list args) {
     history_gauge.ticks_remaining, 
     history_gauge.potential_size
   );
+  history_gauge.did_crank_this_frame = true;
 
   int delta = 
     history_gauge.potential_size - history_gauge.ticks_remaining;
@@ -178,6 +200,7 @@ static void gauge_crank_update(void* gauge, va_list args) {
       );
     }
 
+    // If history has just started rewinding, position based on animation
     if (delta < CRANK_ANIMATION_DURATION) {
       api->sprite->moveTo(
         history_gauge.background, 
@@ -189,9 +212,23 @@ static void gauge_crank_update(void* gauge, va_list args) {
         BB.x + FRB.x + CRANK_ANIMATION_OFFSETS[delta], 
         FRB.y
       );
-    } else if (past_delta < CRANK_ANIMATION_DURATION) {
+    // If animation is complete but history has not yet been consumed,
+    // display gauge in primary position
+    } else if (history_gauge.ticks_remaining) {
       api->sprite->moveTo(history_gauge.background, BB.x, 0);
       api->sprite->moveTo(history_gauge.foreground, BB.x + FRB.x, FRB.y);
+    // If history has been fully consumed vibrate as visual indication,
+    // relying on the sprite's update function to restory primary position
+    // if crank did not happen on a frame.
+    } else {
+      int xshift = random_uint(0, 2) - 1;      
+      int yshift = random_uint(0, 2) - 1;      
+      api->sprite->moveTo(history_gauge.background, BB.x + xshift, yshift);
+      api->sprite->moveTo(
+        history_gauge.foreground, 
+        BB.x + FRB.x + xshift, 
+        FRB.y + yshift
+      );
     }
   } else {
     if (was_showing) {
