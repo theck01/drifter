@@ -1,0 +1,25 @@
+
+#include "dither.h"
+
+static const LCDPattern DITHER_5050_P = {
+  // Bitmap
+  0b01010101,
+  0b10101010,
+  0b01010101,
+  0b10101010,
+  0b01010101,
+  0b10101010,
+  0b01010101,
+  0b10101010,
+  // Mask
+  0b11111111,
+  0b11111111,
+  0b11111111,
+  0b11111111,
+  0b11111111,
+  0b11111111,
+  0b11111111,
+  0b11111111
+};
+
+const LCDColor DITHER_5050 = (LCDColor)DITHER_5050_P;

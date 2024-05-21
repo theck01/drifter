@@ -7,6 +7,7 @@
 #include "C/macro.h"
 #include "C/core/crank-time.h"
 #include "C/utils/closure.h"
+#include "C/utils/dither.h"
 #include "C/utils/geometry.h"
 #include "C/utils/random.h"
 #include "C/utils/types.h"
@@ -36,28 +37,6 @@ const float CRANK_ANIMATION_OFFSETS[] = {
   0
 };
 const uint8_t CRANK_ANIMATION_DURATION = 12;
-
-// Unused capacity dither pattern
-const LCDPattern UNUSED_CAPACITY_DITHER = {
-  // Bitmap
-  0b01010101,
-  0b10101010,
-  0b01010101,
-  0b10101010,
-  0b01010101,
-  0b10101010,
-  0b01010101,
-  0b10101010,
-  // Mask
-  0b11111111,
-  0b11111111,
-  0b11111111,
-  0b11111111,
-  0b11111111,
-  0b11111111,
-  0b11111111,
-  0b11111111
-};
 
 
 // DATA TYPES
@@ -161,7 +140,7 @@ void draw_unused_capacity(LCDSprite* s, PDRect bounds, PDRect dirty_rect) {
       dirty_fill.y,
       dirty_fill.width,
       dirty_fill.height,
-      (LCDColor)UNUSED_CAPACITY_DITHER
+      DITHER_5050
     );
   }
 
