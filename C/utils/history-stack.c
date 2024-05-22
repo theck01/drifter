@@ -29,9 +29,11 @@ history_stack* history_stack_create(uint16_t size) {
   return s;
 }
 
-void history_stack_push(history_stack* s, void* item) {
+void* history_stack_push(history_stack* s, void* item) {
+  void* existing = s->stack[s->i];
 	s->stack[s->i] = item;
 	s->i = s->i + 1 < s->size ? s->i + 1 : 0;
+  return existing;
 }
 
 void* history_stack_pop(history_stack* s) {
