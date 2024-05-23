@@ -1,0 +1,6 @@
+-Wall
+-Wextra
+-Wdouble-promotion
+-g
+-I/Users/larrry/Developer/PlaydateSDK/C_API/pd_api
+-include /Users/larrry/Developer/PlaydateSDK/C_API/pd_api.h
