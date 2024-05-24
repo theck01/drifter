@@ -9,6 +9,7 @@
 #include "C/utils/history-stack.h"
 
 #include "event-emitter.h"
+#include "sprite-animator.h"
 
 #include "crank-time.h"
 
@@ -90,8 +91,16 @@ void crank_time_update(void) {
   last_tick = current_tick;
 
   intptr_t oldest_diff = (intptr_t)history_stack_push(tick_history, (void*)tick_diff);
+  int16_t old_sum = running_diff_sum;
   running_diff_sum += tick_diff - oldest_diff;
   average_tps = fabsf(running_diff_sum / HISTORY_DURATION_SEC);
+
+  if (running_diff_sum && !old_sum) {
+    sprite_animator_pause();
+  }
+  if (!running_diff_sum && old_sum) {
+    sprite_animator_resume();
+  }
 
   float speed_multiplier = 1.0f;
   if (average_tps > MINIMUM_MULTIPLIER_TPS) {

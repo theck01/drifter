@@ -18,6 +18,7 @@ sprite_animator* sprite_animator_create(
 
 void sprite_animator_start(sprite_animator* s);
 
+
 void sprite_animator_stop(sprite_animator* s);
 
 void sprite_animator_set_animation(
@@ -31,5 +32,8 @@ void sprite_animator_set_animation_and_frame(
 );
 
 void sprite_animator_destroy(sprite_animator* s);
+
+void sprite_animator_pause(void);
+void sprite_animator_resume(void);
 
 #endif
