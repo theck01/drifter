@@ -4,6 +4,7 @@
 #include "C/api.h"
 #include "C/core/sprite-animator.h"
 #include "C/utils/closure.h"
+#include "C/utils/functions.h"
 #include "C/utils/memory-recycler.h"
 #include "C/utils/random.h"
 #include "C/utils/types.h"
@@ -129,11 +130,6 @@ static void load_animations_if_needed(void) {
 
 // ANT LOGIC
 
-void ant_update(LCDSprite* s) {
- // Draw inverted for debuging vs lua ant
- //get_api()->sprite->setDrawMode(s, kDrawModeInverted);
-};
-
 void ant_init(void* initial_model, va_list args) {
   void* model_to_init = va_arg(args, void*);
   ant_model_copy(initial_model, model_to_init);
@@ -224,7 +220,7 @@ ant* ant_create(float x, float y) {
   );
 
   a->sprite = api->sprite->newSprite();
-  api->sprite->setUpdateFunction(a->sprite, &ant_update);
+  api->sprite->setUpdateFunction(a->sprite, &noop_sprite_update);
   api->sprite->moveTo(a->sprite, x, y);
   api->sprite->addSprite(a->sprite);
 
