@@ -57,8 +57,6 @@ typedef struct gauge_struct {
   int sprite_animation_increment;
   LCDSprite* background;
   LCDSprite* unused_capacity;
-  // This must be the last sprite added for correct ZIndex, and also for correct
-  // sprite animation for all sprites that make up the gauge.
   LCDSprite* foreground;
   gid_t crank_id;
 } gauge;
@@ -264,6 +262,7 @@ void load_sprites(void) {
     history_gauge.background, 
     &position_sprites
   );
+  api->sprite->setIgnoresDrawOffset(history_gauge.background, 1);
   api->sprite->setVisible(history_gauge.background, 0);
   api->sprite->addSprite(history_gauge.background);
 
@@ -276,6 +275,7 @@ void load_sprites(void) {
     history_gauge.unused_capacity, 
     &noop_sprite_update
   );
+  api->sprite->setIgnoresDrawOffset(history_gauge.unused_capacity, 1);
   api->sprite->setVisible(history_gauge.unused_capacity, 0);
   api->sprite->addSprite(history_gauge.unused_capacity);
 
@@ -288,6 +288,7 @@ void load_sprites(void) {
     history_gauge.foreground, 
     &noop_sprite_update
   );
+  api->sprite->setIgnoresDrawOffset(history_gauge.foreground, 1);
   api->sprite->setVisible(history_gauge.foreground, 0);
   api->sprite->addSprite(history_gauge.foreground);
 }

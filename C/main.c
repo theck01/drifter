@@ -17,6 +17,8 @@
 #include "C/core/crank-time.h"
 #include "C/core/fps-timers.h"
 #include "C/ui/history-gauge.h"
+#include "C/ui/viewport.h"
+#include "C/ui/map-grid.h"
 #include "C/utils/random.h"
 #include "C/utils/types.h"
 #include "C/utils/vector.h"
@@ -86,6 +88,8 @@ int eventHandler(
     }
 
     history_gauge_connect();
+    map_grid_show();
+    viewport_set_offset(100,30);
   }  
 
   return 0;
