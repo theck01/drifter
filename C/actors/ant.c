@@ -136,7 +136,7 @@ void ant_init(void* initial_model, va_list args) {
 }
 
 void ant_plan(void* self, va_list args) {
-  ant* a = (ant*)a;
+  ant* a = (ant*)self;
   ant_model* to_update = va_arg(args, ant_model*);
   ant_model* current_state = va_arg(args, ant_model*);
 

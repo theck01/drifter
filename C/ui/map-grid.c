@@ -6,7 +6,10 @@
 
 #include "C/api.h"
 #include "C/const.h"
+#include "C/utils/closure.h"
+#include "C/utils/functions.h"
 #include "C/utils/geometry.h"
+#include "C/utils/types.h"
 
 #include "viewport.h"
 
@@ -14,46 +17,33 @@
 
 static LCDBitmap* grid_img = NULL;
 static LCDSprite* grid = NULL;
+gid_t viewport_listener_id = INVALID_GID;
 bool shown = false;
 point grid_offset = {
   .x = -(MAP_TILE_SIZE_PX/2),
   .y = -(MAP_TILE_SIZE_PX/2)
 };
-point last_viewport_offset = {
-  .x = INT_MAX,
-  .y = INT_MAX
-};
 
-void position_grid(LCDSprite* s) {
-  point viewport_offset;
-  viewport_get_offset(&viewport_offset);
-
-  if (
-    last_viewport_offset.x == viewport_offset.x &&
-    last_viewport_offset.y == viewport_offset.y
-  ) {
-    return;    
-  }
-
-  last_viewport_offset.x = viewport_offset.x;
-  last_viewport_offset.y = viewport_offset.y;
+void viewport_moved(void* _, va_list args) {
+  int vx = va_arg(args, int);
+  int vy = va_arg(args, int);
 
   int xshift = 0;
-  if (viewport_offset.x < grid_offset.x) {
-    xshift = ceilf((viewport_offset.x - grid_offset.x) / (float)MAP_TILE_SIZE_PX);
-  } else if (viewport_offset.x > grid_offset.x + MAP_TILE_SIZE_PX) {
+  if (vx < grid_offset.x) {
+    xshift = ceilf((vx - grid_offset.x) / (float)MAP_TILE_SIZE_PX);
+  } else if (vx > grid_offset.x + MAP_TILE_SIZE_PX) {
     xshift = ceilf(
-        (viewport_offset.x - (grid_offset.x + MAP_TILE_SIZE_PX)) / 
+        (vx - (grid_offset.x + MAP_TILE_SIZE_PX)) / 
         (float)MAP_TILE_SIZE_PX
     );
   }
 
   int yshift = 0;
-  if (viewport_offset.y < grid_offset.y) {
-    yshift = ceilf((viewport_offset.y - grid_offset.y) / (float)MAP_TILE_SIZE_PX);
-  } else if (viewport_offset.y > grid_offset.y + MAP_TILE_SIZE_PX) {
+  if (vy < grid_offset.y) {
+    yshift = ceilf((vy - grid_offset.y) / (float)MAP_TILE_SIZE_PX);
+  } else if (vy > grid_offset.y + MAP_TILE_SIZE_PX) {
     yshift = ceilf(
-        (viewport_offset.y - (grid_offset.y + MAP_TILE_SIZE_PX)) / 
+        (vy - (grid_offset.y + MAP_TILE_SIZE_PX)) / 
         (float)MAP_TILE_SIZE_PX
     );
   }
@@ -92,11 +82,14 @@ void map_grid_show(void) {
     api->sprite->setCenter(grid, 0, 0);
     api->sprite->setZIndex(grid, MAP_GRID_Z_INDEX);
     api->sprite->setImage(grid, grid_img, kBitmapUnflipped);
-    api->sprite->setUpdateFunction(grid, &position_grid);
+    api->sprite->setUpdateFunction(grid, noop_sprite_update);
     api->sprite->moveTo(grid, grid_offset.x, grid_offset.y);
     api->sprite->addSprite(grid);
   }
   api->sprite->setVisible(grid, 1);
+  viewport_listener_id = viewport_add_offset_listener(
+    closure_create(NULL /* context */, viewport_moved)
+  );
   shown = true;
 }
 
@@ -107,7 +100,8 @@ void map_grid_hide(void) {
     api->system->error("Map grid is already hidden");
     return;
   }
-
+  viewport_remove_offset_listener(viewport_listener_id);
+  viewport_listener_id = INVALID_GID;
   api->sprite->setVisible(grid, 0);
   shown = false;
 }
