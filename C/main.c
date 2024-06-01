@@ -24,12 +24,14 @@
 #include "C/utils/vector.h"
 
 static vector* ant_vector = NULL;
+static controls* default_controls = NULL;
 static PlaydateAPI* api = NULL;
 
 int c_update_loop(lua_State *L) {
   crank_time_update();
   fps_timers_update();
   api->lua->pushNil();
+  controls_poll(default_controls);
   return 1;
 }
 
@@ -87,9 +89,10 @@ int eventHandler(
       vector_push(ant_vector, a);
     }
 
+    default_controls = create_controls();
     history_gauge_connect();
     map_grid_show();
-    viewport_set_offset(100,30);
+    viewport_connect(default_controls);
   }  
 
   return 0;

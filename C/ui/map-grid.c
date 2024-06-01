@@ -30,7 +30,7 @@ void viewport_moved(void* _, va_list args) {
 
   int xshift = 0;
   if (vx < grid_offset.x) {
-    xshift = ceilf((vx - grid_offset.x) / (float)MAP_TILE_SIZE_PX);
+    xshift = floorf((vx - grid_offset.x) / (float)MAP_TILE_SIZE_PX);
   } else if (vx > grid_offset.x + MAP_TILE_SIZE_PX) {
     xshift = ceilf(
         (vx - (grid_offset.x + MAP_TILE_SIZE_PX)) / 
@@ -40,7 +40,7 @@ void viewport_moved(void* _, va_list args) {
 
   int yshift = 0;
   if (vy < grid_offset.y) {
-    yshift = ceilf((vy - grid_offset.y) / (float)MAP_TILE_SIZE_PX);
+    yshift = floorf((vy - grid_offset.y) / (float)MAP_TILE_SIZE_PX);
   } else if (vy > grid_offset.y + MAP_TILE_SIZE_PX) {
     yshift = ceilf(
         (vy - (grid_offset.y + MAP_TILE_SIZE_PX)) / 
@@ -49,11 +49,9 @@ void viewport_moved(void* _, va_list args) {
   }
 
   if (xshift || yshift) {
-    get_api()->sprite->moveTo(
-      grid,
-      grid_offset.x + (xshift * MAP_TILE_SIZE_PX), 
-      grid_offset.y + (yshift * MAP_TILE_SIZE_PX)
-    );
+    grid_offset.x += (xshift * MAP_TILE_SIZE_PX);
+    grid_offset.y += (yshift * MAP_TILE_SIZE_PX);
+    get_api()->sprite->moveTo(grid, grid_offset.x, grid_offset.y);
   }
 }
 
