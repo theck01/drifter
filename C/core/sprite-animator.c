@@ -1,13 +1,14 @@
 #include <stdbool.h>
 
 #include "C/api.h"
+#include "C/macro.h"
 #include "C/utils/closure.h"
 
 #include "fps-timers.h"
 
 #include "sprite-animator.h"
 
-static bool paused = false;
+static int pause_counter = 0;
 
 struct sprite_animator_struct {
   LCDSprite* sprite;
@@ -44,7 +45,7 @@ sprite_animator* sprite_animator_create(
 }
 
 void sprite_animator_tick(void* animator, va_list _) {
-  if (paused) {
+  if (pause_counter) {
     return;
   }
   sprite_animator* s = (sprite_animator*)animator;
@@ -95,9 +96,9 @@ void sprite_animator_destroy(sprite_animator* s) {
 }
 
 void sprite_animator_pause(void) {
-  paused = true;
+  pause_counter++;
 }
 
 void sprite_animator_resume(void) {
-  paused = false;
+  pause_counter = max(pause_counter - 1, 0);
 }

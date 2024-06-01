@@ -5,6 +5,7 @@
 #include "C/api.h"
 #include "C/macro.h"
 #include "C/core/event-emitter.h"
+#include "C/core/sprite-animator.h"
 
 #include "viewport.h"
 
@@ -91,7 +92,19 @@ void dpad_handler(void* context, va_list args) {
         multiplier.x = powf(2, (hold_bonus.x > 0 ? hold_bonus.x : -hold_bonus.x) * HOLD_FRACTION);
         multiplier.y = powf(2, (hold_bonus.y > 0 ? hold_bonus.y : -hold_bonus.y) * HOLD_FRACTION);
         // purposefull fallthrough
+        viewport_set_offset(
+          offset.x + (base_offset.x * multiplier.x), 
+          offset.y + (base_offset.y * multiplier.y)
+        );
+        break;
       case PRESS:
+        // pause animations while viewport moves, resume on release
+        sprite_animator_pause();
+        viewport_set_offset(
+          offset.x + (base_offset.x * multiplier.x), 
+          offset.y + (base_offset.y * multiplier.y)
+        );
+        break;
       case TAP:
         viewport_set_offset(
           offset.x + (base_offset.x * multiplier.x), 
@@ -114,7 +127,8 @@ void dpad_handler(void* context, va_list args) {
         case D_RIGHT:
           hold_bonus.x = min(hold_bonus.x, 0);
           break;
-        }
+      }
+      sprite_animator_resume();
     }
   }
 }
