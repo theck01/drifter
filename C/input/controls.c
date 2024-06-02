@@ -1,4 +1,5 @@
 #include "C/api.h"
+#include "C/const.h"
 #include "C/core/event-emitter.h"
 
 #include "controls.h"
@@ -7,18 +8,6 @@ struct controls_struct {
   event_emitter* dpad;
   event_emitter* a;
   event_emitter* b;
-};
-
-typedef struct button_conversion_struct {
-  PDButtons pd;
-  input_button_e local;
-} button_pair;
-
-static button_pair DPAD_BUTTON_LIST[4] = {
-  { .pd = kButtonLeft, .local = D_LEFT },
-  { .pd = kButtonUp, .local = D_UP },
-  { .pd = kButtonRight, .local = D_RIGHT },
-  { .pd = kButtonDown, .local = D_DOWN }
 };
 
 controls* create_controls(void) {
@@ -68,61 +57,37 @@ void controls_remove_listener_for_button_group(
   }
 }
 
-bool action_for_button(
-  PDButtons b, 
-  PDButtons current, 
-  PDButtons pushed, 
-  PDButtons released,
-  input_action_e* result
-) {
-  if (b & pushed) {
-    *result = PRESS;
-    return true;
-  }
+void controls_handle(controls* c, input_event* events) {
+  input_event dpad_events[INPUT_QUEUE_SIZE];
+  int dpad_count = 0;
+  input_event a_events[INPUT_QUEUE_SIZE];
+  int a_count = 0;
+  input_event b_events[INPUT_QUEUE_SIZE];
+  int b_count = 0;
 
-  if (b & current) {
-    *result = HELD;
-    return true;
-  }
-
-  if (b & released) {
-    *result = RELEASE;
-    return true;
-  }
-
-  return false;
-}
-
-void controls_poll(controls* c) {
-  PlaydateAPI* api = get_api();
-
-  PDButtons current, pushed, released;
-  get_api()->system->getButtonState(&current, &pushed, &released);
-
-  input_event event_list[4];
-  input_action_e action;
-  int event_count = 0;
-  for (int i = 0; i<4; i++) {
-    PDButtons pd_dpad =  DPAD_BUTTON_LIST[i].pd;
-    input_button_e dpad =  DPAD_BUTTON_LIST[i].local;
-    if (action_for_button(pd_dpad, current, pushed, released, &action)) {
-      event_list[event_count++] = create_input_event(action, dpad);
+  int i = 0;
+  while (!input_event_is_nil(events[i])) {
+    input_button_e btn = input_event_button(events[i]);
+    if (input_button_is_dpad(btn)) {
+      dpad_events[dpad_count++] = events[i];
+    } else if (btn == A) {
+      a_events[a_count++] = events[i];
+    } else if (btn == B) {
+      b_events[b_count++] = events[i];
     }
+    i++;
   }
-  event_list[event_count] = create_nil_event();
-  if (event_count > 0) {
-    event_emitter_fire(c->dpad, event_list);
+  dpad_events[dpad_count] = create_nil_event();
+  if (dpad_count > 0) {
+    event_emitter_fire(c->dpad, dpad_events);
   }
-
-  event_list[1] = create_nil_event();
-  if (action_for_button(kButtonA, current, pushed, released, &action)) {
-    event_list[0] = create_input_event(action, A);
-    event_emitter_fire(c->a, event_list);
+  a_events[a_count] = create_nil_event();
+  if (a_count > 0) {
+    event_emitter_fire(c->a, a_events);
   }
-
-  if (action_for_button(kButtonB, current, pushed, released, &action)) {
-    event_list[0] = create_input_event(action, B);
-    event_emitter_fire(c->b, event_list);
+  b_events[b_count] = create_nil_event();
+  if (b_count > 0) {
+    event_emitter_fire(c->b, b_events);
   }
 }
 

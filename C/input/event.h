@@ -33,4 +33,6 @@ bool input_event_is_nil(input_event e);
 input_action_e input_event_action(input_event e);
 input_button_e input_event_button(input_event e);
 
+bool input_button_is_dpad(input_button_e btn);
+
 #endif

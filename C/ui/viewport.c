@@ -91,7 +91,6 @@ void dpad_handler(void* context, va_list args) {
         );
         multiplier.x = powf(2, (hold_bonus.x > 0 ? hold_bonus.x : -hold_bonus.x) * HOLD_FRACTION);
         multiplier.y = powf(2, (hold_bonus.y > 0 ? hold_bonus.y : -hold_bonus.y) * HOLD_FRACTION);
-        // purposefull fallthrough
         viewport_set_offset(
           offset.x + (base_offset.x * multiplier.x), 
           offset.y + (base_offset.y * multiplier.y)
@@ -113,7 +112,7 @@ void dpad_handler(void* context, va_list args) {
         break;
     }
 
-    if (action == RELEASE) {
+    if (action == RELEASE || action == TAP) {
       switch (button) {
         case D_UP:
           hold_bonus.y = max(hold_bonus.y, 0);

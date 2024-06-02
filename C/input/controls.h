@@ -5,6 +5,7 @@
 #include "pd_api.h"
 
 #include "C/utils/closure.h"
+#include "C/utils/types.h"
 
 #include "event.h"
 
@@ -35,7 +36,8 @@ void controls_remove_listener_for_button_group(
   button_group_e group 
 );
 
-void controls_poll(controls* c);
+// Notify controls of new events in a nil-event terminated array
+void controls_handle(controls* c, input_event* events);
 
 void destroy_controls(controls* c);
 

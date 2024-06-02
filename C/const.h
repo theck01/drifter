@@ -4,6 +4,9 @@
 
 #include <stdint.h>
 
+static const uint8_t BUTTON_COUNT = 6;
+static const uint8_t INPUT_QUEUE_SIZE = 8;
+
 static const uint8_t CURRENT_FPS = 30;
 static const uint8_t MAX_FPS = 50;
 static const uint8_t CRANK_TICKS_PER_REVOLUTION = 30;
