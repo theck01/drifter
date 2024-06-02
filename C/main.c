@@ -27,11 +27,12 @@ static vector* ant_vector = NULL;
 static controls* default_controls = NULL;
 static PlaydateAPI* api = NULL;
 
-int c_update_loop(lua_State *L) {
+int update_loop(void* _) {
+  controls_poll(default_controls);
   crank_time_update();
   fps_timers_update();
-  api->lua->pushNil();
-  controls_poll(default_controls);
+  api->sprite->updateAndDrawSprites();
+  api->system->drawFPS(0, 0);
   return 1;
 }
 
@@ -61,27 +62,7 @@ int eventHandler(
     api = playdate;
     srand(playdate->system->getSecondsSinceEpoch(NULL));
     playdate->system->resetElapsedTime();
-    // run_tests();
-  } 
-  else if (event == kEventInitLua) {
-    const char* err;
-    if (!playdate->lua->addFunction(c_update_loop, "cupdate", &err)) {
-      playdate->system->logToConsole(
-        "%s:%i: addFunction failed, %s", 
-        __FILE__, 
-        __LINE__, 
-        err
-      );
-    }
-
-    if (!playdate->lua->addFunction(destroy_ants, "destroyAnts", &err)) {
-      playdate->system->logToConsole(
-        "%s:%i: addFunction failed, %s", 
-        __FILE__, 
-        __LINE__, 
-        err
-      );
-    }
+    playdate->system->setUpdateCallback(update_loop, NULL);
 
     ant_vector = vector_create(100);
     for (uint8_t i=0; i<100; i++) {
@@ -93,7 +74,6 @@ int eventHandler(
     history_gauge_connect();
     map_grid_show();
     viewport_connect(default_controls);
-  }  
-
+  } 
   return 0;
 }
