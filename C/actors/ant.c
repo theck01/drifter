@@ -3,13 +3,13 @@
 
 #include "C/api.h"
 #include "C/core/sprite-animator.h"
+#include "C/core/entity.h"
 #include "C/utils/closure.h"
 #include "C/utils/functions.h"
 #include "C/utils/memory-recycler.h"
 #include "C/utils/random.h"
 #include "C/utils/types.h"
 
-#include "actor.h"
 #include "ant.h"
 
 
@@ -39,7 +39,7 @@ typedef struct ant_model_struct {
 } ant_model;
 
 struct ant_struct {
-  actor* self;
+  entity* self;
   LCDSprite* sprite;
   sprite_animator* animator;
   gid_t id;
@@ -212,7 +212,7 @@ ant* ant_create(float x, float y) {
 
   a->id = getNextGID();
 
-  a->self = actor_create(
+  a->self = entity_create(
     ANT_LABEL,
     ant_model_allocator,
     ant_model_destructor,
@@ -233,11 +233,11 @@ ant* ant_create(float x, float y) {
   );
   sprite_animator_start(a->animator);
 
-  actor_start_updates(
+  entity_start_active(
     a->self,
     closure_create(&initial_model, ant_init),
-    closure_create(a, ant_plan),
-    closure_create(a, ant_apply)
+    closure_create(a, ant_apply),
+    closure_create(a, ant_plan)
   );
 
   return a;
@@ -245,7 +245,7 @@ ant* ant_create(float x, float y) {
 
 void ant_destroy(ant* a) {
   PlaydateAPI* api = get_api();
-  actor_destroy(a->self);  
+  entity_destroy(a->self);  
   sprite_animator_destroy(a->animator);
   api->sprite->removeSprite(a->sprite);
   api->sprite->freeSprite(a->sprite);
