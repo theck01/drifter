@@ -11,7 +11,6 @@ typedef struct entity_struct entity;
 
 typedef struct entity_state_struct {
   point position;
-  bool shown;
 } entity_state;
 
 typedef struct entity_model_struct {
@@ -74,6 +73,8 @@ void entity_start(entity* e, entity_base_behavior* behavior);
 void entity_start_active(entity* e, entity_active_behavior* behavior);
 
 void entity_stop_updates(entity* e);
+
+void entity_show(entity* e, bool show);
 
 void entity_destroy(entity* e);
 

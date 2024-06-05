@@ -19,6 +19,7 @@ struct entity_struct {
   closure* model_copy;
   entity_full_behavior behavior;
   gid_t crank_time_id;
+  bool shown;
 };
 
 static void entity_advance(entity* e) {
@@ -31,7 +32,10 @@ static void entity_advance(entity* e) {
     }
   }
 
-  closure_call(e->behavior.apply, model, e->current_model);
+  if (e->shown) {
+    closure_call(e->behavior.apply, model, e->current_model);
+  }
+
   history_stack_push(e->undo, model);
   e->current_model = model;
   return;
@@ -40,7 +44,9 @@ static void entity_advance(entity* e) {
 static void entity_reverse(entity* e) {
   void* model = history_stack_pop(e->undo);
   if (model) {
-    closure_call(e->behavior.apply, model, e->current_model);
+    if (e->shown) {
+      closure_call(e->behavior.apply, model, e->current_model);
+    }
     history_stack_push(e->redo, model);
     e->current_model = model;
   }
@@ -82,7 +88,6 @@ void* entity_model_copy(void* extended_copy, va_list args) {
 
   destination->core.position.x = source->core.position.x;
   destination->core.position.y = source->core.position.y;
-  destination->core.shown = source->core.shown;
   ec(source->extended, destination->extended);
 
   return NULL;
@@ -183,6 +188,17 @@ void entity_stop_updates(entity* e) {
   e->crank_time_id = INVALID_GID;
   history_stack_flush(e->undo);
   history_stack_flush(e->redo);
+}
+
+void entity_show(entity* e, bool show) {
+  if (e->shown == show) {
+    return;
+  }
+  closure_call(e->behavior.show, show);
+  // If showing, reapply the entire current state.
+  if (show) {
+    closure_call(e->behavior.apply, e->current_model, NULL);
+  }
 }
 
 void entity_destroy(entity* e) {

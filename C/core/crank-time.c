@@ -96,10 +96,10 @@ void crank_time_update(void) {
   average_tps = fabsf(running_diff_sum / HISTORY_DURATION_SEC);
 
   if (running_diff_sum && !old_sum) {
-    sprite_animator_pause();
+    sprite_animator_global_pause();
   }
   if (!running_diff_sum && old_sum) {
-    sprite_animator_resume();
+    sprite_animator_global_resume();
   }
 
   float speed_multiplier = 1.0f;

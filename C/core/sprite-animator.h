@@ -33,7 +33,10 @@ void sprite_animator_set_animation_and_frame(
 
 void sprite_animator_destroy(sprite_animator* s);
 
-void sprite_animator_pause(void);
-void sprite_animator_resume(void);
+void sprite_animator_pause(sprite_animator* s);
+void sprite_animator_resume(sprite_animator* s);
+
+void sprite_animator_global_pause(void);
+void sprite_animator_global_resume(void);
 
 #endif

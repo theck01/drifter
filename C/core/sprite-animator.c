@@ -8,7 +8,7 @@
 
 #include "sprite-animator.h"
 
-static int pause_counter = 0;
+static int global_pause_counter = 0;
 
 struct sprite_animator_struct {
   LCDSprite* sprite;
@@ -16,6 +16,7 @@ struct sprite_animator_struct {
   uint8_t fps;
   uint8_t frame;
   gid_t timer_id;
+  bool paused;
 };
 
 uint8_t sprite_animator_show_frame(sprite_animator* s, uint8_t frame) {
@@ -44,14 +45,15 @@ sprite_animator* sprite_animator_create(
   s->fps=fps;
   s->timer_id = INVALID_GID;
   s->frame = sprite_animator_show_frame(s, starting_frame);
+  s->paused = false;
   return s;
 }
 
 void* sprite_animator_tick(void* animator, va_list _) {
-  if (pause_counter) {
+  sprite_animator* s = (sprite_animator*)animator;
+  if (global_pause_counter || s->paused) {
     return NULL;
   }
-  sprite_animator* s = (sprite_animator*)animator;
   s->frame = sprite_animator_show_frame(s, s->frame + 1);
   return NULL;
 }
@@ -99,10 +101,18 @@ void sprite_animator_destroy(sprite_animator* s) {
   free(s);
 }
 
-void sprite_animator_pause(void) {
-  pause_counter++;
+void sprite_animator_pause(sprite_animator* s) {
+  s->paused = true;
 }
 
-void sprite_animator_resume(void) {
-  pause_counter = max(pause_counter - 1, 0);
+void sprite_animator_resume(sprite_animator* s) {
+  s->paused = false;
+}
+
+void sprite_animator_global_pause(void) {
+  global_pause_counter++;
+}
+
+void sprite_animator_global_resume(void) {
+  global_pause_counter = max(global_pause_counter - 1, 0);
 }

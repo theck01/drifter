@@ -192,6 +192,19 @@ void* ant_apply(void* self, va_list args) {
   return NULL;
 }
 
+void* ant_show(void* self, va_list args) {
+  PlaydateAPI* api = get_api();
+  ant* a = (ant*)self;
+  bool show = (bool)va_arg(args, int);
+  api->sprite->setVisible(a->sprite, show ? 1 : 0);
+  if (show) {
+    sprite_animator_resume(a->animator);
+  } else {
+    sprite_animator_pause(a->animator);
+  }
+  return NULL;
+}
+
 ant* ant_create(int x, int y) {
   load_animations_if_needed();
   PlaydateAPI* api = get_api();
@@ -207,7 +220,7 @@ ant* ant_create(int x, int y) {
     .ticks_to_next_decision = random_uint(15, 60)
   };
   entity_model initial_model = {
-    .core = { .position = { .x = x, .y = y }, .shown = true },
+    .core = { .position = { .x = x, .y = y } },
     .extended = &initial_extended
   };
 
@@ -237,7 +250,7 @@ ant* ant_create(int x, int y) {
   sprite_animator_start(a->animator);
 
   entity_active_behavior behavior = {
-    .show = NULL,
+    .show = closure_create(a, ant_show),
     .apply = closure_create(a, ant_apply),
     .plan = closure_create(a, ant_plan)
   };

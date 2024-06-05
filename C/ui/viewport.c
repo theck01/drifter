@@ -96,7 +96,7 @@ void* dpad_handler(void* context, va_list args) {
         offset.y + (base_offset.y * multiplier.y)
       );
     } else if (action == PRESS) {
-      sprite_animator_pause();
+      sprite_animator_global_pause();
       viewport_set_offset(
         offset.x + (base_offset.x * multiplier.x), 
         offset.y + (base_offset.y * multiplier.y)
@@ -118,7 +118,10 @@ void* dpad_handler(void* context, va_list args) {
       } else if (button == D_RIGHT) {
         hold_bonus.x = min(hold_bonus.x, 0);
       }
-      sprite_animator_resume();
+    }
+      
+    if (action == RELEASE) {
+      sprite_animator_global_resume();
     }
   }
   return NULL;
