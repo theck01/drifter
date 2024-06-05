@@ -47,6 +47,10 @@ void* history_stack_pop(history_stack* s) {
 	return item;
 }
 
+void history_stack_flush(history_stack* stack) {
+  while (history_stack_pop(stack)) {}
+}
+
 void history_stack_destroy(history_stack* s) {
 	free(s->stack);
 	free(s);

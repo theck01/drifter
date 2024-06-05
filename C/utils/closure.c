@@ -52,15 +52,16 @@ closure* closure_create_with_cleanup(
 }
 
 
-void closure_call(closure* c, ...) {
+void* closure_call(closure* c, ...) {
   va_list args;
   va_start(args, c);
-  closure_vcall(c, args);
+  void* result = closure_vcall(c, args);
   va_end(args);
+  return result;
 }
 
-void closure_vcall(closure* c, va_list args) {
-  c->fn(c->context, args);
+void* closure_vcall(closure* c, va_list args) {
+  return c->fn(c->context, args);
 }
 
 void closure_destroy(closure* c) {

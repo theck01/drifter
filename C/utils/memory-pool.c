@@ -10,13 +10,13 @@ struct memory_pool_struct {
   void** a;
   uint16_t i;
   uint16_t size;
-  destructor_fn destructor;
+  closure* destructor;
 };
 
 memory_pool* memory_pool_create(
   uint16_t size, 
-  allocator_fn allocator,
-  destructor_fn destructor
+  closure* allocator,
+  closure* destructor
 ) {
   memory_pool* pool = malloc(sizeof(memory_pool));
   if (pool == NULL) {
@@ -30,8 +30,9 @@ memory_pool* memory_pool_create(
     get_api()->system->error("Could not allocate child array in cyclic array");
   }
   for (uint16_t i=0; i < size; i++) {
-    pool->a[i] = (*allocator)();
+    pool->a[i] = closure_call(allocator);
   }
+  closure_destroy(allocator);
   return pool;
 }
 
@@ -43,8 +44,9 @@ void* memory_pool_next(memory_pool* pool) {
 
 void memory_pool_destroy(memory_pool* pool) {
   for (uint16_t i = 0; i < pool->size; i++) {
-    pool->destructor(pool->a[i]);
+    closure_call(pool->destructor, pool->a[i]);
   }
+  closure_destroy(pool->destructor);
   free(pool->a);
   free(pool);
 }

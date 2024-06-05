@@ -24,7 +24,7 @@ point grid_offset = {
   .y = -(MAP_TILE_SIZE_PX/2)
 };
 
-void viewport_moved(void* _, va_list args) {
+void* viewport_moved(void* _, va_list args) {
   int vx = va_arg(args, int);
   int vy = va_arg(args, int);
 
@@ -53,6 +53,8 @@ void viewport_moved(void* _, va_list args) {
     grid_offset.y += (yshift * MAP_TILE_SIZE_PX);
     get_api()->sprite->moveTo(grid, grid_offset.x, grid_offset.y);
   }
+
+  return NULL;
 }
 
 void map_grid_show(void) {

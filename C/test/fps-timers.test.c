@@ -28,26 +28,27 @@ static pretend_animation late_start[] = {
   { .fps = 16, .label = "16-frame" }
 };
 
-void advance_animation(void* animation, va_list _) {
+void* advance_animation(void* animation, va_list _) {
   pretend_animation* a = (pretend_animation*)animation;
   get_api()->system->logToConsole(
     "Pretend animation \"%s\" advanced at  %d fps",
     a->label,
     a->fps
   );
+  return NULL;
 }
 
 static uint8_t stage_n = 1;
 static uint32_t killer_id = 7;
 static int delay = 2; 
-void kill_animation(void* context, va_list args) {
+void* kill_animation(void* context, va_list args) {
   delay--;
   if (delay > 0) {
     get_api()->system->logToConsole("killer has %d more rounds to wait...", delay);
-    return;
+    return NULL;
   } else if (delay < 0) {
     get_api()->system->logToConsole("killer lingers as a corrupted ghost...");
-    return;
+    return NULL;
   }
 
   switch (stage_n) {
@@ -74,6 +75,7 @@ void kill_animation(void* context, va_list args) {
       break;
   }
   stage_n++;
+  return NULL;
 }
 
 void fps_timers_run_tests(void) {

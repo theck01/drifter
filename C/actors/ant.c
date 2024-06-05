@@ -30,8 +30,6 @@ typedef enum {
 } action_e;
 
 typedef struct ant_model_struct {
-  float x;
-  float y;
   action_e action;
   orientation_e orientation;
   uint8_t speed;
@@ -63,8 +61,6 @@ void ant_model_destructor(void* model) {
 void ant_model_copy(void* source, void* dest) {
   ant_model* ams = (ant_model*)source;
   ant_model* amd = (ant_model*)dest;
-  amd->x = ams->x;
-  amd->y = ams->y;
   amd->action = ams->action;
   amd->orientation = ams->orientation;
   amd->speed = ams->speed;
@@ -74,8 +70,6 @@ void ant_model_copy(void* source, void* dest) {
 void ant_model_print(ant_model* am) {
   get_api()->system->logToConsole(
     "{ x: %f, y: %f, action: %d, orientation: %d, speed: %d, ticks_to_next_decision: %d }", 
-    am->x, 
-    am->y, 
     am->action, 
     am->orientation, 
     am->speed, 
@@ -130,70 +124,75 @@ static void load_animations_if_needed(void) {
 
 // ANT LOGIC
 
-void ant_init(void* initial_model, va_list args) {
-  void* model_to_init = va_arg(args, void*);
-  ant_model_copy(initial_model, model_to_init);
-}
-
-void ant_plan(void* self, va_list args) {
+void* ant_plan(void* self, va_list args) {
   ant* a = (ant*)self;
-  ant_model* to_update = va_arg(args, ant_model*);
-  ant_model* current_state = va_arg(args, ant_model*);
+  entity_model* todo = va_arg(args, entity_model*);
+  ant_model* todo_extended = (ant_model*)todo->extended;
+  entity_model* current = va_arg(args, entity_model*);
+  ant_model* current_extended = (ant_model*)current->extended;
 
-  if (current_state->action == WALK) {
-    int16_t velocity = current_state->speed * 
-      (current_state->orientation == RIGHT ? 1 : -1);
-    to_update->x += velocity;
+  if (current_extended->action == WALK) {
+    int16_t velocity = current_extended->speed * 
+      (current_extended->orientation == RIGHT ? 1 : -1);
+    todo->core.position.x += velocity;
 
-    if (current_state->ticks_to_next_decision < 4) {
-      to_update->speed >>= 1;
-    } else if (current_state->speed < MAX_SPEED_PX) {
-      to_update->speed <<= 1;
+    if (current_extended->ticks_to_next_decision < 4) {
+      todo_extended->speed >>= 1;
+    } else if (current_extended->speed < MAX_SPEED_PX) {
+      todo_extended->speed <<= 1;
     }
   }
 
-  if (current_state->ticks_to_next_decision == 0) {
-    to_update->action = randomf() > 0.5f ? WALK : IDLE;
-    if (to_update->action == WALK) {
-      to_update->speed = 1;
+  if (current_extended->ticks_to_next_decision == 0) {
+    todo_extended->action = randomf() > 0.5f ? WALK : IDLE;
+    if (todo_extended->action == WALK) {
+      todo_extended->speed = 1;
     }
-    to_update->orientation = randomf() > 0.5f ? LEFT : RIGHT;
-    to_update->ticks_to_next_decision = random_uint(15,60);
+    todo_extended->orientation = randomf() > 0.5f ? LEFT : RIGHT;
+    todo_extended->ticks_to_next_decision = random_uint(15,60);
   }
-  to_update->ticks_to_next_decision--;
+  todo_extended->ticks_to_next_decision--;
+  return NULL;
 }
 
-void ant_apply(void* self, va_list args) {
+void* ant_apply(void* self, va_list args) {
   PlaydateAPI* api = get_api();
   ant* a = (ant*)self;
-  ant_model* current_model = va_arg(args, ant_model*);
-  ant_model* prev_model = va_arg(args, ant_model*);
+  entity_model* current = va_arg(args, entity_model*);
+  ant_model* current_extended = (ant_model*)current->extended;
+  entity_model* prev = va_arg(args, entity_model*);
+  ant_model* prev_extended = prev ? (ant_model*)prev->extended : NULL;
 
   if (
-    !prev_model || 
-    current_model->x != prev_model->x || 
-    current_model->y != prev_model->y
+    !prev || 
+    current->core.position.x != prev->core.position.x || 
+    current->core.position.y != prev->core.position.y
   ) {
-    api->sprite->moveTo(a->sprite, current_model->x, current_model->y);
+    api->sprite->moveTo(
+      a->sprite, 
+      current->core.position.x, 
+      current->core.position.y
+    );
   }
-  if (!prev_model || current_model->action != prev_model->action) {
+  if (!prev_extended || current_extended->action != prev_extended->action) {
     sprite_animator_set_animation_and_frame(
       a->animator, 
-      ant_animations[current_model->action][current_model->orientation],
+      ant_animations[current_extended->action][current_extended->orientation],
       0 /* starting frame */
     );
   } else if (
-    !prev_model || 
-    current_model->orientation != prev_model->orientation
+    !prev_extended || 
+    current_extended->orientation != prev_extended->orientation
   ) {
     sprite_animator_set_animation(
       a->animator, 
-      ant_animations[current_model->action][current_model->orientation]
+      ant_animations[current_extended->action][current_extended->orientation]
     );
   }
+  return NULL;
 }
 
-ant* ant_create(float x, float y) {
+ant* ant_create(int x, int y) {
   load_animations_if_needed();
   PlaydateAPI* api = get_api();
   ant* a = malloc(sizeof(ant));
@@ -201,14 +200,17 @@ ant* ant_create(float x, float y) {
     get_api()->system->error("Could not allocate memory for ant");
   }
 
-  ant_model initial_model = {
-    .x = x,
-    .y = y,
+  ant_model initial_extended = {
     .action = IDLE,
     .orientation = RIGHT,
     .speed = 0,
     .ticks_to_next_decision = random_uint(15, 60)
   };
+  entity_model initial_model = {
+    .core = { .position = { .x = x, .y = y }, .shown = true },
+    .extended = &initial_extended
+  };
+
 
   a->id = getNextGID();
 
@@ -216,7 +218,8 @@ ant* ant_create(float x, float y) {
     ANT_LABEL,
     ant_model_allocator,
     ant_model_destructor,
-    ant_model_copy
+    ant_model_copy,
+    &initial_model
   );
 
   a->sprite = api->sprite->newSprite();
@@ -227,18 +230,18 @@ ant* ant_create(float x, float y) {
 
   a->animator = sprite_animator_create(
     a->sprite,
-    ant_animations[initial_model.action][initial_model.orientation], 
+    ant_animations[initial_extended.action][initial_extended.orientation], 
     12 /* fps */, 
     0 /* starting_frame */
   );
   sprite_animator_start(a->animator);
 
-  entity_start_active(
-    a->self,
-    closure_create(&initial_model, ant_init),
-    closure_create(a, ant_apply),
-    closure_create(a, ant_plan)
-  );
+  entity_active_behavior behavior = {
+    .show = NULL,
+    .apply = closure_create(a, ant_apply),
+    .plan = closure_create(a, ant_plan)
+  };
+  entity_start_active(a->self, &behavior);
 
   return a;
 }

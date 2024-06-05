@@ -293,7 +293,7 @@ void load_sprites(void) {
   api->sprite->addSprite(history_gauge.foreground);
 }
 
-static void gauge_crank_update(void* gauge, va_list args) {
+static void* gauge_crank_update(void* gauge, va_list args) {
   PlaydateAPI* api = get_api();
   int time_diff = va_arg(args, int);
   bool was_showing = 
@@ -340,6 +340,8 @@ static void gauge_crank_update(void* gauge, va_list args) {
       api->sprite->markDirty(history_gauge.unused_capacity);
     }
   }
+
+  return NULL;
 }
 
 void history_gauge_connect(void) {

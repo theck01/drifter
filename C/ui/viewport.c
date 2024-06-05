@@ -57,79 +57,71 @@ void viewport_remove_offset_listener(gid_t listener_id) {
   event_emitter_remove(emitter, listener_id);
 }
 
-void dpad_handler(void* context, va_list args) {
+void* dpad_handler(void* context, va_list args) {
   input_event* events = va_arg(args, input_event*);
   for (int i = 0; !input_event_is_nil(events[i]); i++) {
     point base_offset = { .x = 0, .y = 0 };
     input_button_e button = input_event_button(events[i]);
-    switch (button) {
-      case D_UP:
-        base_offset.y = -1;
-        break;
-      case D_DOWN:
-        base_offset.y = 1;
-        break;
-      case D_LEFT:
-        base_offset.x = -1;
-        break;
-      case D_RIGHT:
-        base_offset.x = 1;
-        break;
+    if (button == D_UP) {
+      base_offset.y = -1;
+    } else if (button == D_DOWN) {
+      base_offset.y = 1;
+    } else if (button == D_LEFT) {
+      base_offset.x = -1;
+    } else if (button == D_RIGHT) {
+      base_offset.x = 1;
     }
 
     point multiplier = { .x = 1, .y = 1 };
     input_action_e action = input_event_action(events[i]);
-    switch (action) {
-      case HELD:
-        hold_bonus.x = max(
-          min(hold_bonus.x + base_offset.x, MAX_BONUS), 
-          -MAX_BONUS
-        );
-        hold_bonus.y = max(
-          min(hold_bonus.y + base_offset.y, MAX_BONUS), 
-          -MAX_BONUS
-        );
-        multiplier.x = powf(2, (hold_bonus.x > 0 ? hold_bonus.x : -hold_bonus.x) * HOLD_FRACTION);
-        multiplier.y = powf(2, (hold_bonus.y > 0 ? hold_bonus.y : -hold_bonus.y) * HOLD_FRACTION);
-        viewport_set_offset(
-          offset.x + (base_offset.x * multiplier.x), 
-          offset.y + (base_offset.y * multiplier.y)
-        );
-        break;
-      case PRESS:
-        // pause animations while viewport moves, resume on release
-        sprite_animator_pause();
-        viewport_set_offset(
-          offset.x + (base_offset.x * multiplier.x), 
-          offset.y + (base_offset.y * multiplier.y)
-        );
-        break;
-      case TAP:
-        viewport_set_offset(
-          offset.x + (base_offset.x * multiplier.x), 
-          offset.y + (base_offset.y * multiplier.y)
-        );
-        break;
+    if (action == HELD) {
+      hold_bonus.x = max(
+        min(hold_bonus.x + base_offset.x, MAX_BONUS), 
+        -MAX_BONUS
+      );
+      hold_bonus.y = max(
+        min(hold_bonus.y + base_offset.y, MAX_BONUS), 
+        -MAX_BONUS
+      );
+      multiplier.x = powf(
+        2, 
+        (hold_bonus.x > 0 ? hold_bonus.x : -hold_bonus.x) * HOLD_FRACTION
+      );
+      multiplier.y = powf(
+        2, 
+        (hold_bonus.y > 0 ? hold_bonus.y : -hold_bonus.y) * HOLD_FRACTION
+      );
+      viewport_set_offset(
+        offset.x + (base_offset.x * multiplier.x), 
+        offset.y + (base_offset.y * multiplier.y)
+      );
+    } else if (action == PRESS) {
+      sprite_animator_pause();
+      viewport_set_offset(
+        offset.x + (base_offset.x * multiplier.x), 
+        offset.y + (base_offset.y * multiplier.y)
+      );
+    } else if (action == TAP) {
+      viewport_set_offset(
+        offset.x + (base_offset.x * multiplier.x), 
+        offset.y + (base_offset.y * multiplier.y)
+      );
     }
 
     if (action == RELEASE || action == TAP) {
-      switch (button) {
-        case D_UP:
-          hold_bonus.y = max(hold_bonus.y, 0);
-          break;
-        case D_DOWN:
-          hold_bonus.y = min(hold_bonus.y, 0);
-          break;
-        case D_LEFT:
-          hold_bonus.x = max(hold_bonus.x, 0);
-          break;
-        case D_RIGHT:
-          hold_bonus.x = min(hold_bonus.x, 0);
-          break;
+      if (button == D_UP) {
+        hold_bonus.y = max(hold_bonus.y, 0);
+      } else if (button == D_DOWN) {
+        hold_bonus.y = min(hold_bonus.y, 0);
+      } else if (button == D_LEFT) {
+        hold_bonus.x = max(hold_bonus.x, 0);
+      } else if (button == D_RIGHT) {
+        hold_bonus.x = min(hold_bonus.x, 0);
       }
       sprite_animator_resume();
     }
   }
+  return NULL;
 }
 
 void viewport_connect(controls* c) {

@@ -36,6 +36,9 @@ sprite_animator* sprite_animator_create(
   uint8_t starting_frame
 ) {
   sprite_animator* s = malloc(sizeof(sprite_animator));
+  if (!s) {
+    get_api()->system->error("Could not allocate memory for sprite animator");
+  }
   s->sprite = sprite;
   s->animation = animation;
   s->fps=fps;
@@ -44,12 +47,13 @@ sprite_animator* sprite_animator_create(
   return s;
 }
 
-void sprite_animator_tick(void* animator, va_list _) {
+void* sprite_animator_tick(void* animator, va_list _) {
   if (pause_counter) {
-    return;
+    return NULL;
   }
   sprite_animator* s = (sprite_animator*)animator;
   s->frame = sprite_animator_show_frame(s, s->frame + 1);
+  return NULL;
 }
 
 void sprite_animator_start(sprite_animator* s) {
