@@ -6,12 +6,12 @@
 
 #include "C/api.h"
 #include "C/const.h"
+#include "C/core/viewport.h"
 #include "C/utils/closure.h"
 #include "C/utils/functions.h"
 #include "C/utils/geometry.h"
 #include "C/utils/types.h"
 
-#include "viewport.h"
 
 #include "map-grid.h"
 

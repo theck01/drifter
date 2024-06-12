@@ -1,10 +1,11 @@
 #ifndef VIEWPORT
 #define VIEWPORT
 
-#include "C/input/controls.h"
 #include "C/utils/closure.h"
 #include "C/utils/geometry.h"
 #include "C/utils/types.h"
+
+#include "controls.h"
 
 void viewport_get_offset(point* p);
 

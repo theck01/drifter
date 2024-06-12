@@ -1,6 +1,7 @@
 #include "C/api.h"
 #include "C/const.h"
-#include "C/core/event-emitter.h"
+
+#include "event-emitter.h"
 
 #include "controls.h"
 

@@ -7,7 +7,7 @@
 #include "C/utils/closure.h"
 #include "C/utils/types.h"
 
-#include "event.h"
+#include "input-event.h"
 
 typedef enum {
   DPAD = 0,

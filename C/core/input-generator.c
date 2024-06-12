@@ -6,7 +6,7 @@
 #include "C/api.h"
 #include "C/const.h"
 
-#include "event.h"
+#include "input-event.h"
 
 #include "input-generator.h"
 

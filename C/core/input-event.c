@@ -1,5 +1,5 @@
 
-#include "event.h"
+#include "input-event.h"
 
 uint16_t button_mask = 0b1111111111110000;
 uint16_t action_mask = 0b0000000000001111;
