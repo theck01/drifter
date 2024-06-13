@@ -168,6 +168,11 @@ void* ant_apply(void* self, va_list args) {
     current->core.position.x != prev->core.position.x || 
     current->core.position.y != prev->core.position.y
   ) {
+    if (prev) {
+      get_api()->system->logToConsole("moving from (%d, %d) to (%d, %d)", prev->core.position.x, prev->core.position.y, current->core.position.x, current->core.position.y);
+    } else {
+      get_api()->system->logToConsole("moving from nowhere to (%d, %d)", current->core.position.x, current->core.position.y);
+    }
     api->sprite->moveTo(
       a->sprite, 
       current->core.position.x, 
@@ -205,7 +210,7 @@ void* ant_show(void* self, va_list args) {
   return NULL;
 }
 
-ant* ant_create(int x, int y) {
+ant* ant_spawn(world* w, int x, int y) {
   load_animations_if_needed();
   PlaydateAPI* api = get_api();
   ant* a = malloc(sizeof(ant));
@@ -223,7 +228,6 @@ ant* ant_create(int x, int y) {
     .core = { .position = { .x = x, .y = y } },
     .extended = &initial_extended
   };
-
 
   a->id = getNextGID();
 
@@ -250,11 +254,15 @@ ant* ant_create(int x, int y) {
   sprite_animator_start(a->animator);
 
   entity_active_behavior behavior = {
-    .show = closure_create(a, ant_show),
-    .apply = closure_create(a, ant_apply),
+    .base = {
+      .show = closure_create(a, ant_show),
+      .apply = closure_create(a, ant_apply)
+    },
     .plan = closure_create(a, ant_plan)
   };
-  entity_start_active(a->self, &behavior);
+  entity_set_active(a->self, behavior);
+
+  world_add_entity(w, a->self);
 
   return a;
 }

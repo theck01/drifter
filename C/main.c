@@ -19,11 +19,13 @@
 #include "C/core/fps-timers.h"
 #include "C/core/input-generator.h"
 #include "C/core/viewport.h"
+#include "C/core/world.h"
 #include "C/ui/history-gauge.h"
 #include "C/ui/map-grid.h"
 #include "C/utils/random.h"
 #include "C/utils/vector.h"
 
+static world* main_world = NULL;
 static vector* ant_vector = NULL;
 static controls* default_controls = NULL;
 static PlaydateAPI* api = NULL;
@@ -55,9 +57,15 @@ int eventHandler(
     playdate->system->setUpdateCallback(update_loop, NULL);
     input_generator_listen();
 
+    main_world = world_create(30, 18);
+
     ant_vector = vector_create(100);
     for (uint8_t i=0; i<100; i++) {
-      ant* a = ant_create(random_uint(20, 380), random_uint(20, 220));
+      ant* a = ant_spawn(
+        main_world, 
+        random_uint(420, 780), 
+        random_uint(20, 220)
+      );
       vector_push(ant_vector, a);
     }
 
@@ -65,6 +73,7 @@ int eventHandler(
     history_gauge_connect();
     map_grid_show();
     viewport_connect(default_controls);
+    viewport_set_offset(400, 0);
   } 
   return 0;
 }

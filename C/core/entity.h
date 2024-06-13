@@ -35,13 +35,13 @@ typedef struct entity_base_behavior_struct {
    *   `apply` will not be called while hidden.
    */
   closure* show;
+  // TODO: Add a `destroy` closure
 } entity_base_behavior;
 
 typedef struct entity_active_behavior_struct {
-  // From base above
-  closure* apply;
-  closure* show;
+  entity_base_behavior base;
 
+  // TODO: Add world* param so entities can use world state to plan next action
   /*
    * plan(entity_model* model_to_update, entity_model* current_model): Update 
    *   the argument model to advance one time unit. Both models are set to same
@@ -66,13 +66,13 @@ entity* entity_create(
   entity_model* init 
 );
 
+
+void entity_set_behavior(entity* e, entity_base_behavior behavior);
+void entity_set_active(entity* e, entity_active_behavior behavior);
+
 char* entity_get_label(entity* e);
 
-/* Takes ownership of behavior closures, but not the parent object */
-void entity_start(entity* e, entity_base_behavior* behavior);
-void entity_start_active(entity* e, entity_active_behavior* behavior);
-
-void entity_stop_updates(entity* e);
+void entity_get_position(entity* e, point* p);
 
 void entity_show(entity* e, bool show);
 

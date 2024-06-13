@@ -14,7 +14,6 @@ typedef struct tile_metadata_struct {
   bool shown;
 } tile_metadata;
 
-tile* create_tile(int row, int col);
 
 void tile_get_metadata(tile* t, tile_metadata* tmd);
 
@@ -24,6 +23,5 @@ void tile_remove_entity(tile* t, entity* e);
 
 void tile_show(tile* t, bool show);
 
-void destroy_tile(tile* t);
 
 #endif
