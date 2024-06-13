@@ -22,6 +22,8 @@ struct entity_struct {
   history_stack* redo;
   memory_pool* model_pool;
   entity_model* current_model;
+  entity_model* scratch_model;
+  closure* model_destroy;
   closure* model_copy;
   entity_full_behavior behavior;
   gid_t crank_time_id;
@@ -32,13 +34,10 @@ struct entity_struct {
 static void entity_set_current_model(entity* e, entity_model* model) {
   point old_position = e->current_model->core.position;
 
-  if (e->shown) {
-    closure_call(e->behavior.apply, model, e->current_model);
-  }
-
   // Update entity model before notifying world it moved, so that the world
   // update uses correct positions.
   e->current_model = model;
+
   if (
     e->parent_world && 
     (model->core.position.x != old_position.x ||
@@ -71,12 +70,20 @@ static void entity_reverse(entity* e) {
 }
 
 static void* entity_crank_update(void* context, va_list args) {
+  entity* e = (entity*)context;
   int time_diff = va_arg(args, int);
+  closure_call(e->model_copy, e->current_model, e->scratch_model);
   for (int i = time_diff; i > 0; i--) {
-    entity_advance((entity*) context);
+    entity_advance(e);
   }
   for (int i = time_diff; i < 0; i++) {
-    entity_reverse((entity*) context);
+    entity_reverse(e);
+  }
+  // Model changes need to be applied only once, even if multiple crank
+  // ticks have passed, because only the final application will be rendered
+  // to the screen and earlier applications are a waste.
+  if (e->shown) {
+    closure_call(e->behavior.apply, e->current_model, e->scratch_model);
   }
   return NULL;
 }
@@ -127,19 +134,31 @@ entity* entity_create(
   e->label = label;
   e->undo = history_stack_create(HISTORY_SIZE);
   e->redo = history_stack_create(HISTORY_SIZE);
+
+  // Allocate scratch model before memory pool, as the pool will destroy
+  // the allocator closure
+  closure* allocator = closure_create(
+    extended_model_allocator,
+    entity_model_allocator
+  );
+  e->scratch_model = closure_call(allocator);
+
+  // Retain the destructor closure, so that the scratch model can be destroyed
+  // when the entity is destroyed
+  closure* destructor = closure_create(
+    extended_model_destructor,
+    entity_model_destructor
+  );
+  closure_retain(destructor);
+  e->model_destroy = destructor;
+
   // Additional model beyond the possible history size:
   // - Current immmutable model
   // - Modifiable upcoming model
   e->model_pool = memory_pool_create(
     HISTORY_SIZE + 2, 
-    closure_create(
-      extended_model_allocator,
-      entity_model_allocator
-    ),
-    closure_create(
-      extended_model_destructor,
-      entity_model_destructor
-    )
+    allocator,
+    destructor
   );
   e->current_model = (entity_model*)memory_pool_next(e->model_pool);
   e->model_copy = closure_create(extended_model_copy, entity_model_copy);
@@ -210,6 +229,7 @@ void entity_destroy(entity* e) {
     get_api()->system->error("Remove entity from world before destroying");
   }
 
+
   e->current_model = NULL;
   memory_pool_destroy(e->model_pool);
   e->model_pool = NULL;
@@ -221,6 +241,9 @@ void entity_destroy(entity* e) {
 
   entity_cleanup_behavior(e);
 
+  closure_call(e->model_destroy, e->scratch_model);
+  closure_destroy(e->model_destroy);
+  e->model_destroy = NULL;
   closure_destroy(e->model_copy);
   e->model_copy = NULL;
 }

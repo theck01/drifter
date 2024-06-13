@@ -9,6 +9,7 @@ struct closure_struct {
   void* context;
   closure_fn fn;
   closure_context_cleanup_fn cleanup_fn;
+  unsigned int retain_count;
 };
 static memory_recycler* closure_recycler = NULL;
 
@@ -48,6 +49,7 @@ closure* closure_create_with_cleanup(
   c->context = context;
   c->fn = fn;
   c->cleanup_fn = cleanup_fn;
+  c->retain_count = 1;
   return c;
 }
 
@@ -64,7 +66,16 @@ void* closure_vcall(closure* c, va_list args) {
   return c->fn(c->context, args);
 }
 
+void closure_retain(closure* c) {
+  c->retain_count++;
+}
+
 void closure_destroy(closure* c) {
+  if (c->retain_count > 1) {
+    c->retain_count--;
+    return;
+  }
+
   if (c->cleanup_fn) {
     c->cleanup_fn(c->context);
   }

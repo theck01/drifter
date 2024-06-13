@@ -24,6 +24,11 @@ closure* closure_create_with_cleanup(
 void* closure_call(closure* c, ...);
 void* closure_vcall(closure* c, va_list args);
 
+// Should be called for an additional references to the closure beyond the first
+// Will ensure that closures are only truly destroyed when all reference holders
+// have called `destroy` rather than on first call.
+void closure_retain(closure* c);
+
 void closure_destroy(closure* c);
 
 #endif
