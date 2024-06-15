@@ -9,6 +9,7 @@
 struct tile_struct {
   tile_metadata metadata;
   vector* entities;
+  LCDSprite* background;
 };
 
 void init_tile(tile* t, int row, int col);

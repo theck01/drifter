@@ -22,6 +22,7 @@
 #include "C/core/world.h"
 #include "C/ui/history-gauge.h"
 #include "C/ui/map-grid.h"
+#include "C/utils/dither.h"
 #include "C/utils/random.h"
 #include "C/utils/vector.h"
 
@@ -74,6 +75,8 @@ int eventHandler(
     map_grid_show();
     viewport_connect(default_controls);
     viewport_set_offset(400, 0);
+
+    api->graphics->setBackgroundColor(DITHER_5050);
   } 
   return 0;
 }

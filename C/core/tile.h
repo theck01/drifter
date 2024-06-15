@@ -9,8 +9,7 @@
 typedef struct tile_struct tile;
 
 typedef struct tile_metadata_struct {
-  int row;
-  int col;
+  grid_pos origin;
   bool shown;
 } tile_metadata;
 

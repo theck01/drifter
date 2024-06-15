@@ -168,11 +168,6 @@ void* ant_apply(void* self, va_list args) {
     current->core.position.x != prev->core.position.x || 
     current->core.position.y != prev->core.position.y
   ) {
-    if (prev) {
-      get_api()->system->logToConsole("moving from (%d, %d) to (%d, %d)", prev->core.position.x, prev->core.position.y, current->core.position.x, current->core.position.y);
-    } else {
-      get_api()->system->logToConsole("moving from nowhere to (%d, %d)", current->core.position.x, current->core.position.y);
-    }
     api->sprite->moveTo(
       a->sprite, 
       current->core.position.x, 

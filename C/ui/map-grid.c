@@ -86,6 +86,7 @@ void map_grid_show(void) {
     api->sprite->moveTo(grid, grid_offset.x, grid_offset.y);
     api->sprite->addSprite(grid);
   }
+
   api->sprite->setVisible(grid, 1);
   viewport_listener_id = viewport_add_offset_listener(
     closure_create(NULL /* context */, viewport_moved)
