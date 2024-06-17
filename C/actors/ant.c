@@ -205,7 +205,59 @@ void* ant_show(void* self, va_list args) {
   return NULL;
 }
 
-ant* ant_spawn(world* w, int x, int y) {
+void* ant_spawn(void* self, va_list args) {
+  PlaydateAPI* api = get_api();
+  ant* a = (ant*)self;
+  if (a->sprite) {
+    api->system->error("Cannot spawn ant that already has spawned");
+  }
+
+  entity_model* model = va_arg(args, entity_model*);
+  int shown = va_arg(args, int);
+
+  ant_model* extended_model = (ant_model*)model->extended;
+
+  a->sprite = api->sprite->newSprite();
+  api->sprite->setUpdateFunction(a->sprite, &noop_sprite_update);
+  api->sprite->setZIndex(a->sprite, ACTOR_Z_INDEX);
+  api->sprite->moveTo(
+    a->sprite, 
+    model->core.position.x, 
+    model->core.position.y
+  );
+  api->sprite->addSprite(a->sprite);
+  api->sprite->setVisible(a->sprite, shown);
+
+  a->animator = sprite_animator_create(
+    a->sprite,
+    ant_animations[extended_model->action][extended_model->orientation], 
+    12 /* fps */, 
+    0 /* starting_frame */
+  );
+  sprite_animator_start(a->animator);
+  if (!shown) {
+    sprite_animator_pause(a->animator);
+  }
+  
+  return NULL;
+}
+
+void* ant_despawn(void* self, va_list args) {
+  PlaydateAPI* api = get_api();
+  ant* a = (ant*)self;
+  if (!a->sprite) {
+    api->system->error("Cannot despawn ant that is already despawned");
+  }
+
+  api->sprite->freeSprite(a->sprite);
+  a->sprite = NULL;
+  sprite_animator_destroy(a->animator);
+  a->animator = NULL;
+
+  return NULL;
+}
+
+ant* ant_create(world* w, int x, int y) {
   load_animations_if_needed();
   PlaydateAPI* api = get_api();
   ant* a = malloc(sizeof(ant));
@@ -234,24 +286,15 @@ ant* ant_spawn(world* w, int x, int y) {
     &initial_model
   );
 
-  a->sprite = api->sprite->newSprite();
-  api->sprite->setUpdateFunction(a->sprite, &noop_sprite_update);
-  api->sprite->setZIndex(a->sprite, ACTOR_Z_INDEX);
-  api->sprite->moveTo(a->sprite, x, y);
-  api->sprite->addSprite(a->sprite);
-
-  a->animator = sprite_animator_create(
-    a->sprite,
-    ant_animations[initial_extended.action][initial_extended.orientation], 
-    12 /* fps */, 
-    0 /* starting_frame */
-  );
-  sprite_animator_start(a->animator);
+  a->sprite = NULL;
+  a->animator = NULL;
 
   entity_active_behavior behavior = {
     .base = {
+      .spawn = closure_create(a, ant_spawn),
       .show = closure_create(a, ant_show),
-      .apply = closure_create(a, ant_apply)
+      .apply = closure_create(a, ant_apply),
+      .despawn = closure_create(a, ant_despawn)
     },
     .plan = closure_create(a, ant_plan)
   };

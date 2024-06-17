@@ -6,7 +6,7 @@
 
 typedef struct ant_struct ant;
 
-ant* ant_spawn(world* w, int x, int y);
+ant* ant_create(world* w, int x, int y);
 
 void ant_destroy(ant* ant);
 

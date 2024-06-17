@@ -62,7 +62,7 @@ int eventHandler(
 
     ant_vector = vector_create(100);
     for (uint8_t i=0; i<100; i++) {
-      ant* a = ant_spawn(
+      ant* a = ant_create(
         main_world, 
         random_uint(420, 780), 
         random_uint(20, 220)

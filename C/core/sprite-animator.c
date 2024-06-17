@@ -95,9 +95,7 @@ void sprite_animator_set_animation_and_frame(
 }
 
 void sprite_animator_destroy(sprite_animator* s) {
-  if (s->timer_id != INVALID_GID) {
-    fps_timer_stop(s->fps, s->timer_id);
-  }
+  sprite_animator_stop(s);
   free(s);
 }
 

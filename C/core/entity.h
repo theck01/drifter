@@ -20,6 +20,11 @@ typedef struct entity_model_struct {
 
 typedef struct entity_base_behavior_struct {
   /*
+   * spawn(entity_model* model, bool show): Generate any sprites/sounds
+   * associated with the entity. Called on addition to the world.
+   */
+  closure* spawn;
+  /*
    * apply(entity_model* model, entity_model* prev_model): Update any secondary
    *   effects to match model. prev_model may be NULL if there is no previous 
    *   valid state.
@@ -35,7 +40,11 @@ typedef struct entity_base_behavior_struct {
    *   `apply` will not be called while hidden.
    */
   closure* show;
-  // TODO: Add a `destroy` closure
+  /*
+   * despawn(void): Remove any sprite/sounds associated with the entity. Called
+   * when it is removed from the world
+   */
+  closure* despawn;
 } entity_base_behavior;
 
 typedef struct entity_active_behavior_struct {
@@ -66,15 +75,12 @@ entity* entity_create(
   entity_model* init 
 );
 
-
 void entity_set_behavior(entity* e, entity_base_behavior behavior);
 void entity_set_active(entity* e, entity_active_behavior behavior);
 
 char* entity_get_label(entity* e);
 
 void entity_get_position(entity* e, point* p);
-
-void entity_show(entity* e, bool show);
 
 void entity_destroy(entity* e);
 

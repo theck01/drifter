@@ -11,8 +11,10 @@
 #include "entity.private.h"
 
 typedef struct entity_full_behavior {
+  closure* spawn;
   closure* apply;
   closure* show;
+  closure* despawn;
   closure* plan;
 } entity_full_behavior;
 
@@ -196,18 +198,28 @@ void entity_cleanup_behavior(entity* e) {
 
 void entity_set_behavior(entity* e, entity_base_behavior behavior) {
   entity_cleanup_behavior(e);
+  e->behavior.spawn = behavior.spawn;
   e->behavior.show = behavior.show;
   e->behavior.apply = behavior.apply;
+  e->behavior.despawn = behavior.despawn;
 }
 
 void entity_set_active(entity* e, entity_active_behavior behavior) {
   entity_cleanup_behavior(e);
+  e->behavior.spawn = behavior.base.spawn;
   e->behavior.show = behavior.base.show;
   e->behavior.apply = behavior.base.apply;
+  e->behavior.despawn = behavior.base.despawn;
   e->behavior.plan = behavior.plan;
 }
 
 void entity_show(entity* e, bool show) {
+  if (!e->parent_world) {
+    get_api()->system->error(
+      "Cannot change the visibility of a worldless entity"
+    );
+  }
+
   if (e->shown == show) {
     return;
   }
@@ -228,7 +240,6 @@ void entity_destroy(entity* e) {
   if (e->parent_world) {
     get_api()->system->error("Remove entity from world before destroying");
   }
-
 
   e->current_model = NULL;
   memory_pool_destroy(e->model_pool);
@@ -252,22 +263,26 @@ void entity_set_world(entity* e, world* w) {
   if (e->parent_world) {
     get_api()->system->error("Entity already belongs to a world");
   }
+
   if (!e->behavior.apply) {
     get_api()->system->error("Cannot add entity without behavior to world");
   }
 
+  e->parent_world = w;
+  closure_call(e->behavior.spawn, e->current_model, e->shown ? 1 : 0);
   e->crank_time_id = crank_time_add_listener(
     closure_create(e, entity_crank_update)
   );
-  e->parent_world = w;
-  closure_call(e->behavior.apply, e->current_model, NULL);
 }
 
 void entity_clear_world(entity* e) {
   if (!e->parent_world) {
     get_api()->system->error("Entity does not belong to a world");
   }
+
   crank_time_remove_listener(e->crank_time_id);
   e->crank_time_id = INVALID_GID;
+
+  closure_call(e->behavior.despawn);
   e->parent_world = NULL;
 }
