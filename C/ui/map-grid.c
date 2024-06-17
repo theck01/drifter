@@ -8,8 +8,8 @@
 #include "C/const.h"
 #include "C/core/viewport.h"
 #include "C/utils/closure.h"
-#include "C/utils/functions.h"
 #include "C/utils/geometry.h"
+#include "C/utils/sprite.h"
 #include "C/utils/types.h"
 
 
@@ -78,11 +78,10 @@ void map_grid_show(void) {
       );
     }
 
-    grid = api->sprite->newSprite();
+    grid = create_draw_only_sprite();
     api->sprite->setCenter(grid, 0, 0);
     api->sprite->setZIndex(grid, MAP_GRID_Z_INDEX);
     api->sprite->setImage(grid, grid_img, kBitmapUnflipped);
-    api->sprite->setUpdateFunction(grid, noop_sprite_update);
     api->sprite->moveTo(grid, grid_offset.x, grid_offset.y);
     api->sprite->addSprite(grid);
   }

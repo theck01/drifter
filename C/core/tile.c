@@ -1,6 +1,6 @@
 
 #include "C/api.h"
-#include "C/utils/functions.h"
+#include "C/utils/sprite.h"
 
 #include "entity.private.h"
 
@@ -43,12 +43,10 @@ void init_tile(tile* t, int row, int col) {
   init_if_needed();
   PlaydateAPI* api = get_api();
 
-  t->background = api->sprite->newSprite();
+  t->background = create_draw_only_sprite();
   api->sprite->setCenter(t->background, 0, 0);
   api->sprite->setZIndex(t->background, TILE_BACKGROUND_Z_INDEX);
   api->sprite->setImage(t->background, black_bg, kBitmapUnflipped);
-  api->sprite->setUpdateFunction(t->background, noop_sprite_update);
-  api->sprite->setUpdatesEnabled(t->background, false);
   api->sprite->moveTo(
     t->background, 
     col * MAP_TILE_SIZE_PX, 

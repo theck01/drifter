@@ -22,7 +22,6 @@
 #include "C/core/world.h"
 #include "C/ui/history-gauge.h"
 #include "C/ui/map-grid.h"
-#include "C/utils/dither.h"
 #include "C/utils/random.h"
 #include "C/utils/vector.h"
 
@@ -76,7 +75,12 @@ int eventHandler(
     viewport_connect(default_controls);
     viewport_set_offset(400, 0);
 
-    api->graphics->setBackgroundColor(DITHER_5050);
+    // Redraw all sprites on every frame and avoid dirty rect tracking.
+    // The number of sprites planned to be moving around screen causes the
+    // performance dirty rects to drop significantly while drawing on every
+    // frame remains performant (especially with other methods of reducing
+    // draw counts)
+    api->sprite->setAlwaysRedraw(1);
   } 
   return 0;
 }

@@ -5,9 +5,9 @@
 #include "C/core/sprite-animator.h"
 #include "C/core/entity.h"
 #include "C/utils/closure.h"
-#include "C/utils/functions.h"
 #include "C/utils/memory-recycler.h"
 #include "C/utils/random.h"
+#include "C/utils/sprite.h"
 #include "C/utils/types.h"
 
 #include "ant.h"
@@ -217,8 +217,7 @@ void* ant_spawn(void* self, va_list args) {
 
   ant_model* extended_model = (ant_model*)model->extended;
 
-  a->sprite = api->sprite->newSprite();
-  api->sprite->setUpdateFunction(a->sprite, &noop_sprite_update);
+  a->sprite = create_draw_only_sprite();
   api->sprite->setZIndex(a->sprite, ACTOR_Z_INDEX);
   api->sprite->moveTo(
     a->sprite, 

@@ -8,9 +8,9 @@
 #include "C/core/crank-time.h"
 #include "C/utils/closure.h"
 #include "C/utils/dither.h"
-#include "C/utils/functions.h"
 #include "C/utils/geometry.h"
 #include "C/utils/random.h"
+#include "C/utils/sprite.h"
 #include "C/utils/types.h"
 
 #include "history-gauge.h"
@@ -262,32 +262,28 @@ void load_sprites(void) {
     history_gauge.background, 
     &position_sprites
   );
+  api->sprite->setCollisionsEnabled(history_gauge.background, 0);
   api->sprite->setIgnoresDrawOffset(history_gauge.background, 1);
   api->sprite->setVisible(history_gauge.background, 0);
   api->sprite->addSprite(history_gauge.background);
 
-  history_gauge.unused_capacity = api->sprite->newSprite();
+  history_gauge.unused_capacity = create_draw_only_sprite();
   api->sprite->setCenter(history_gauge.unused_capacity, 0, 0);
   api->sprite->setZIndex(history_gauge.unused_capacity, HUD_Z_INDEX);
   api->sprite->setSize(history_gauge.unused_capacity, GRB.width, GRB.height);
-  api->sprite->setDrawFunction(history_gauge.unused_capacity, &draw_unused_capacity);
-  api->sprite->setUpdateFunction(
+  api->sprite->setDrawFunction(
     history_gauge.unused_capacity, 
-    &noop_sprite_update
+    &draw_unused_capacity
   );
   api->sprite->setIgnoresDrawOffset(history_gauge.unused_capacity, 1);
   api->sprite->setVisible(history_gauge.unused_capacity, 0);
   api->sprite->addSprite(history_gauge.unused_capacity);
 
-  history_gauge.foreground = api->sprite->newSprite();
+  history_gauge.foreground = create_draw_only_sprite();
   api->sprite->setCenter(history_gauge.foreground, 0, 0);
   api->sprite->setZIndex(history_gauge.foreground, HUD_Z_INDEX);
   api->sprite->setSize(history_gauge.foreground, GRB.width, GRB.height);
   api->sprite->setDrawFunction(history_gauge.foreground, &draw_gauge_bar);
-  api->sprite->setUpdateFunction(
-    history_gauge.foreground, 
-    &noop_sprite_update
-  );
   api->sprite->setIgnoresDrawOffset(history_gauge.foreground, 1);
   api->sprite->setVisible(history_gauge.foreground, 0);
   api->sprite->addSprite(history_gauge.foreground);
