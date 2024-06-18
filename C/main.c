@@ -25,6 +25,8 @@
 #include "C/utils/random.h"
 #include "C/utils/vector.h"
 
+const int ANT_COUNT = 100;
+
 static world* main_world = NULL;
 static vector* ant_vector = NULL;
 static controls* default_controls = NULL;
@@ -59,8 +61,8 @@ int eventHandler(
 
     main_world = world_create(30, 18);
 
-    ant_vector = vector_create(100);
-    for (uint8_t i=0; i<100; i++) {
+    ant_vector = vector_create(ANT_COUNT);
+    for (uint8_t i=0; i<ANT_COUNT; i++) {
       ant* a = ant_create(
         main_world, 
         random_uint(420, 780), 
