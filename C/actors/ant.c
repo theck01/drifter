@@ -4,6 +4,7 @@
 #include "C/api.h"
 #include "C/core/sprite-animator.h"
 #include "C/core/entity.h"
+#include "C/core/sensor.h"
 #include "C/utils/closure.h"
 #include "C/utils/memory-recycler.h"
 #include "C/utils/random.h"
@@ -127,14 +128,26 @@ static void load_animations_if_needed(void) {
 void* ant_plan(void* self, va_list args) {
   ant* a = (ant*)self;
   entity_model* todo = va_arg(args, entity_model*);
-  ant_model* todo_extended = (ant_model*)todo->extended;
   entity_model* current = va_arg(args, entity_model*);
+  sensor* viewpoint = va_arg(args, sensor*);
+
+  ant_model* todo_extended = (ant_model*)todo->extended;
   ant_model* current_extended = (ant_model*)current->extended;
 
   if (current_extended->action == WALK) {
     int16_t velocity = current_extended->speed * 
       (current_extended->orientation == RIGHT ? 1 : -1);
-    todo->core.position.x += velocity;
+    point destination = { 
+      .x = todo->core.position.x + velocity, 
+      .y = todo->core.position.y 
+    };
+    point actual;
+    if (sensor_can_entity_move(viewpoint, a->self, destination, &actual)) {
+      todo->core.position.x = destination.x;
+    } else {
+      todo_extended->orientation = 
+        todo_extended->orientation == LEFT ? RIGHT : LEFT;
+    }
 
     if (current_extended->ticks_to_next_decision < 4) {
       todo_extended->speed >>= 1;

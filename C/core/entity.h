@@ -50,11 +50,13 @@ typedef struct entity_base_behavior_struct {
 typedef struct entity_active_behavior_struct {
   entity_base_behavior base;
 
-  // TODO: Add world* param so entities can use world state to plan next action
   /*
-   * plan(entity_model* model_to_update, entity_model* current_model): Update 
-   *   the argument model to advance one time unit. Both models are set to same
-   *   state at beginning model_to_update is the only one that should be 
+   * plan(
+   *   entity_model* model_to_update, 
+   *   entity_model* current_model,
+   *   sensor* viewpoint
+   * ): Update the argument model to advance one time unit. Both models are set
+   *   to same state at beginning model_to_update is the only one that should be
    *   modified.
    */
   closure* plan;

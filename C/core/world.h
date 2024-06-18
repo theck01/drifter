@@ -14,6 +14,4 @@ void world_add_entity(world* w, entity* e);
 
 void world_remove_entity(world* w, entity* e);
 
-void world_entity_moved(world* w, entity* e, point original);
-
 #endif

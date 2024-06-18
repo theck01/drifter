@@ -10,7 +10,7 @@
 #include "entity.private.h"
 #include "viewport.h"
 
-#include "world.h"
+#include "world.private.h"
 
 static const int VIEWPORT_TILE_SHOW_BUFFER = -1;
 
@@ -18,15 +18,6 @@ static const int VISIBLE_TILE_HEIGHT =
   (SCREEN_HEIGHT_PX / MAP_TILE_SIZE_PX) + 2 * VIEWPORT_TILE_SHOW_BUFFER;
 static const int VISIBLE_TILE_WIDTH = 
   (SCREEN_WIDTH_PX / MAP_TILE_SIZE_PX) + 2 * VIEWPORT_TILE_SHOW_BUFFER;
-
-struct world_struct {
-  // Tile at (row, col) is stored at (tiles_wide * row + col) tile_index
-  tile*  tiles;
-  int tiles_wide;
-  int tiles_tall;
-  grid_pos visible_origin;
-  gid_t viewport_listener_id; 
-};
 
 static int tile_index(world* w, int row, int column) {
   return row * w->tiles_wide + column;
@@ -158,7 +149,7 @@ world* world_create(int tiles_wide, int tiles_tall) {
   for (int row = 0; row < tiles_tall; row++) {
     for (int col = 0; col < tiles_wide; col++) {
       int i = tile_index(w, row, col);
-      init_tile(&(w->tiles[i]), row, col);
+      init_tile(&(w->tiles[i]), row, col, w);
       // Show the tiles as if the viewport is at 0,0 initially, so viewport
       // update has an initial state to diff from
       if (
@@ -243,3 +234,18 @@ void world_entity_moved(world* w, entity* e, point original) {
   tile_remove_entity(&(w->tiles[old_index]), e);
   tile_add_entity(&(w->tiles[new_index]), e);
 }
+
+tile* world_get_tile(world* w, grid_pos p) { 
+  if (
+    p.row >= w->tiles_tall || 
+    p.row < 0 || 
+    p.col >= w->tiles_wide || 
+    p.col < 0
+  ) {
+    return NULL;
+  }
+
+  int i = tile_index(w, p.row, p.col);
+  return &(w->tiles[i]);
+}
+

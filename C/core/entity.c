@@ -6,7 +6,8 @@
 #include "C/utils/history-stack.h"
 #include "C/utils/memory-pool.h"
 
-#include "world.h"
+#include "world.private.h"
+#include "tile.private.h"
 
 #include "entity.private.h"
 
@@ -55,7 +56,14 @@ static void entity_advance(entity* e) {
     model = (entity_model*)memory_pool_next(e->model_pool);
     closure_call(e->model_copy, e->current_model, model);
     if (e->behavior.plan) {
-      closure_call(e->behavior.plan, model, e->current_model);
+      grid_pos location = {
+        .row = e->current_model->core.position.y / MAP_TILE_SIZE_PX,
+        .col = e->current_model->core.position.x / MAP_TILE_SIZE_PX,
+      };
+      // Assume the tile exists, because the entity was allowed to exist in the
+      // current position.
+      tile* t = world_get_tile(e->parent_world, location);
+      closure_call(e->behavior.plan, model, e->current_model, t->sensor);
     }
   }
   history_stack_push(e->undo, model);

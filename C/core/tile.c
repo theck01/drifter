@@ -9,7 +9,7 @@
 LCDBitmap* white_bg = NULL;
 LCDBitmap* black_bg = NULL;
 
-static void init_if_needed() {
+static void init_if_needed(void) {
   PlaydateAPI* api = get_api();
   if (white_bg && black_bg) {
     return;
@@ -39,7 +39,7 @@ static void init_if_needed() {
   }
 }
 
-void init_tile(tile* t, int row, int col) {
+void init_tile(tile* t, int row, int col, world* w) {
   init_if_needed();
   PlaydateAPI* api = get_api();
 
@@ -58,6 +58,8 @@ void init_tile(tile* t, int row, int col) {
   t->metadata.origin.col = col;
   t->metadata.shown = false;
   t->entities = vector_create(1);
+  grid_pos center = { .row = row, .col = col };
+  t->sensor = sensor_create(1 /* tile_radius */, center, w);
 }
 
 void tile_get_metadata(tile* t, tile_metadata* tmd) {
@@ -111,4 +113,6 @@ void teardown_tile(tile* t) {
   t->background = NULL;
   vector_destroy(t->entities);
   t->entities = NULL;
+  sensor_destroy(t->sensor);
+  t->sensor = NULL;
 }
