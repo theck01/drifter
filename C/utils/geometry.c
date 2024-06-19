@@ -1,10 +1,20 @@
 
+#include <math.h>
+
 #include "C/api.h"
+#include "C/const.h"
 #include "C/macro.h"
 
 #include "logging.h"
 
 #include "geometry.h"
+
+grid_pos grid_pos_for_point(point p) {
+  grid_pos gp;
+  gp.row = floorf((float)p.y / (float)MAP_TILE_SIZE_PX);
+  gp.col = floorf((float)p.x / (float)MAP_TILE_SIZE_PX);
+  return gp;
+}
 
 bool intersection(PDRect a, PDRect b, PDRect* result) {
   PlaydateAPI* api = get_api();

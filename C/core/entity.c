@@ -56,10 +56,7 @@ static void entity_advance(entity* e) {
     model = (entity_model*)memory_pool_next(e->model_pool);
     closure_call(e->model_copy, e->current_model, model);
     if (e->behavior.plan) {
-      grid_pos location = {
-        .row = e->current_model->core.position.y / MAP_TILE_SIZE_PX,
-        .col = e->current_model->core.position.x / MAP_TILE_SIZE_PX,
-      };
+      grid_pos location = grid_pos_for_point(e->current_model->core.position);
       // Assume the tile exists, because the entity was allowed to exist in the
       // current position.
       tile* t = world_get_tile(e->parent_world, location);

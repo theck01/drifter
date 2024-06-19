@@ -77,10 +77,7 @@ bool sensor_can_entity_move(
   point desired, 
   point* actual
 ) {
-  grid_pos desired_pos = {
-   .col = desired.x / MAP_TILE_SIZE_PX,
-   .row = desired.y / MAP_TILE_SIZE_PX
-  };
+  grid_pos desired_pos = grid_pos_for_point(desired);
   // Overly simple early implementation, this needs to consider tile state and
   // tile entities as well as the existance of a tile at that position.
   tile* t = tile_for_grid_pos(s, desired_pos);

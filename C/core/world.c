@@ -37,10 +37,11 @@ static void* viewport_moved(void* world_to_cast, va_list args) {
   world* w = world_to_cast; 
   point p = { .x = va_arg(args, int), .y = va_arg(args, int) };
   grid_pos prev_visible = w->visible_origin;
-  w->visible_origin.row = 
-    (p.y - MAP_TILE_SIZE_PX * VIEWPORT_TILE_SHOW_BUFFER) / MAP_TILE_SIZE_PX;
-  w->visible_origin.col = 
-    (p.x - MAP_TILE_SIZE_PX * VIEWPORT_TILE_SHOW_BUFFER) / MAP_TILE_SIZE_PX;
+  point show_point = { 
+    .x = p.x - MAP_TILE_SIZE_PX * VIEWPORT_TILE_SHOW_BUFFER,
+    .y = p.y - MAP_TILE_SIZE_PX * VIEWPORT_TILE_SHOW_BUFFER
+  };
+  w->visible_origin = grid_pos_for_point(show_point);
 
   if (
     w->visible_origin.row != prev_visible.row || 
@@ -179,13 +180,17 @@ void world_add_entity(world* w, entity* e) {
 
   point p;
   entity_get_position(e, &p);
-  int col = p.x / MAP_TILE_SIZE_PX; 
-  int row = p.y / MAP_TILE_SIZE_PX; 
-  if (row < 0 || row >= w->tiles_tall || col < 0 || col >= w->tiles_wide) {
+  grid_pos gp = grid_pos_for_point(p);
+  if (
+    gp.row < 0 || 
+    gp.row >= w->tiles_tall || 
+    gp.col < 0 || 
+    gp.col >= w->tiles_wide
+  ) {
     get_api()->system->error("Cannot add entity outside of world bounds");
   }
 
-  int i = tile_index(w, row, col);
+  int i = tile_index(w, gp.row, gp.col);
   tile_add_entity(&(w->tiles[i]), e);
 }
 
@@ -194,13 +199,17 @@ void world_remove_entity(world* w, entity* e) {
 
   point p;
   entity_get_position(e, &p);
-  int col = p.x / MAP_TILE_SIZE_PX; 
-  int row = p.y / MAP_TILE_SIZE_PX; 
-  if (row < 0 || row >= w->tiles_tall || col < 0 || col > w->tiles_wide) {
+  grid_pos gp = grid_pos_for_point(p);
+  if (
+    gp.row < 0 || 
+    gp.row >= w->tiles_tall || 
+    gp.col < 0 || 
+    gp.col >= w->tiles_wide
+  ) {
     get_api()->system->error("Cannot remove entity outside of world bounds");
   }
 
-  int i = tile_index(w, row, col);
+  int i = tile_index(w, gp.row, gp.col);
   tile_remove_entity(&(w->tiles[i]), e);
 }
 
@@ -208,29 +217,27 @@ void world_entity_moved(world* w, entity* e, point original) {
   point current;
   entity_get_position(e, &current);
 
-  int old_col = original.x / MAP_TILE_SIZE_PX; 
-  int old_row = original.y / MAP_TILE_SIZE_PX; 
-  int new_col = current.x / MAP_TILE_SIZE_PX; 
-  int new_row = current.y / MAP_TILE_SIZE_PX; 
-  if (old_row == new_row && old_col == new_col) {
+  grid_pos old = grid_pos_for_point(original);
+  grid_pos new = grid_pos_for_point(current);
+  if (old.row == new.row && old.col == new.col) {
     return;
   }
 
   if (
-    old_row < 0 || 
-    old_row >= w->tiles_tall || 
-    old_col < 0 || 
-    old_col > w->tiles_wide ||
-    new_row < 0 || 
-    new_row >= w->tiles_tall || 
-    new_col < 0 || 
-    new_col > w->tiles_wide
+    old.row < 0 || 
+    old.row >= w->tiles_tall || 
+    old.col < 0 || 
+    old.col > w->tiles_wide ||
+    new.row < 0 || 
+    new.row >= w->tiles_tall || 
+    new.col < 0 || 
+    new.col > w->tiles_wide
   ) {
     get_api()->system->error("Cannot move entity outside of world bounds");
   }
 
-  int old_index = tile_index(w, old_row, old_col);
-  int new_index = tile_index(w, new_row, new_col);
+  int old_index = tile_index(w, old.row, old.col);
+  int new_index = tile_index(w, new.row, new.col);
   tile_remove_entity(&(w->tiles[old_index]), e);
   tile_add_entity(&(w->tiles[new_index]), e);
 }
