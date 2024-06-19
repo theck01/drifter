@@ -25,7 +25,7 @@
 #include "C/utils/random.h"
 #include "C/utils/vector.h"
 
-const int ANT_COUNT = 100;
+const int ANT_COUNT = 200;
 
 static world* main_world = NULL;
 static vector* ant_vector = NULL;

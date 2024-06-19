@@ -14,12 +14,13 @@
 #include "crank-time.h"
 
 static const uint8_t HISTORY_SIZE_TPS = 4;
-static const float HISTORY_DURATION_SEC = HISTORY_SIZE_TPS / 30.0f;
-static const float MINIMUM_MULTIPLIER_TPS = 35.0f;
-static const float MAX_CONSISTENCY_MULTIPLIER = 3.0f;
-static const float MAX_SPEED_MULTIPLIER = 1.6f;
+static const float HISTORY_DURATION_SEC = 
+  HISTORY_SIZE_TPS / (float)CRANK_TICKS_PER_REVOLUTION;
+static const float MINIMUM_MULTIPLIER_TPS = (7.f/6.f) * CRANK_TICKS_PER_REVOLUTION;
+static const float MAX_CONSISTENCY_MULTIPLIER = 2.f;
+static const float MAX_SPEED_MULTIPLIER = 2.f;
 // VALUEx over crank speed required to increment speed multiplier 1x
-static const float OVERSPEED_RATIO = 2.2f; 
+static const float OVERSPEED_RATIO = 2.f; 
 static const float CONSISTENCY_MULTIPLIER_INCREMENT_PER_TICK = 
   1.0f / (2 * CRANK_TICKS_PER_REVOLUTION);
 
