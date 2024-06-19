@@ -1,5 +1,6 @@
 
 #include <stddef.h>
+#include <string.h>
 
 #include "C/api.h"
 #include "C/core/crank-time.h"
@@ -118,8 +119,7 @@ void* entity_model_copy(void* extended_copy, va_list args) {
   entity_model* destination = va_arg(args, entity_model*);
   copy_fn ec = (copy_fn)extended_copy;
 
-  destination->core.position.x = source->core.position.x;
-  destination->core.position.y = source->core.position.y;
+  memcpy(&destination->core, &source->core, sizeof(entity_state));
   ec(source->extended, destination->extended);
 
   return NULL;

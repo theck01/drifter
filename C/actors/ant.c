@@ -1,5 +1,6 @@
 
 #include <stdbool.h>
+#include <string.h>
 
 #include "C/api.h"
 #include "C/core/sprite-animator.h"
@@ -62,10 +63,7 @@ void ant_model_destructor(void* model) {
 void ant_model_copy(void* source, void* dest) {
   ant_model* ams = (ant_model*)source;
   ant_model* amd = (ant_model*)dest;
-  amd->action = ams->action;
-  amd->orientation = ams->orientation;
-  amd->speed = ams->speed;
-  amd->ticks_to_next_decision = ams->ticks_to_next_decision;
+  memcpy(amd, ams, sizeof(ant_model));
 }
 
 void ant_model_print(ant_model* am) {
