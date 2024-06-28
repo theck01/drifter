@@ -8,6 +8,7 @@
 #include "C/utils/memory-pool.h"
 
 #include "world.private.h"
+#include "structure.private.h"
 #include "tile.private.h"
 
 #include "entity.private.h"
@@ -32,11 +33,12 @@ struct entity_struct {
   entity_full_behavior behavior;
   gid_t crank_time_id;
   world* parent_world;
+  attachment* foothold;
   bool shown;
 };
 
 static void entity_set_current_model(entity* e, entity_model* model) {
-  point old_position = e->current_model->core.position;
+  int_rect old_bounds = e->current_model->core.bounds;
 
   // Update entity model before notifying world it moved, so that the world
   // update uses correct positions.
@@ -44,10 +46,11 @@ static void entity_set_current_model(entity* e, entity_model* model) {
 
   if (
     e->parent_world && 
-    (model->core.position.x != old_position.x ||
-    model->core.position.y != old_position.y)
+    (model->core.bounds.x != old_bounds.x ||
+    model->core.bounds.y != old_bounds.y)
   ) {
-    world_entity_moved(e->parent_world, e, old_position);
+    point p = { .x = old_bounds.x, .y = old_bounds.y };
+    world_entity_moved(e->parent_world, e, p);
   }
 }
 
@@ -57,7 +60,11 @@ static void entity_advance(entity* e) {
     model = (entity_model*)memory_pool_next(e->model_pool);
     closure_call(e->model_copy, e->current_model, model);
     if (e->behavior.plan) {
-      grid_pos location = grid_pos_for_point(e->current_model->core.position);
+      point p = { 
+        .x = e->current_model->core.bounds.x,
+        .y = e->current_model->core.bounds.y
+      };
+      grid_pos location = grid_pos_for_point(p);
       // Assume the tile exists, because the entity was allowed to exist in the
       // current position.
       tile* t = world_get_tile(e->parent_world, location);
@@ -237,8 +244,13 @@ void entity_show(entity* e, bool show) {
 }
 
 void entity_get_position(entity* e, point* p) {
-  p->x = e->current_model->core.position.x;
-  p->y = e->current_model->core.position.y;
+  p->x = e->current_model->core.bounds.x;
+  p->y = e->current_model->core.bounds.y;
+}
+
+void entity_move_to(entity* e, point p) {
+  e->current_model->core.bounds.x = p.x;
+  e->current_model->core.bounds.y = p.y;
 }
 
 void entity_destroy(entity* e) {

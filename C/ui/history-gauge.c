@@ -162,7 +162,7 @@ void draw_gauge_bar(LCDSprite* s, PDRect bounds, PDRect dirty_rect) {
     .height = bar_height
   };
   PDRect dirty_fill;
-  if (intersection(dirty_rect, fill_rect, &dirty_fill)) {
+  if (pd_intersection(dirty_rect, fill_rect, &dirty_fill)) {
     api->graphics->fillRect(
       dirty_fill.x,
       dirty_fill.y,
@@ -179,7 +179,7 @@ void draw_gauge_bar(LCDSprite* s, PDRect bounds, PDRect dirty_rect) {
     .height = bounds.height - bar_height
   };
   PDRect dirty_clear;
-  if (intersection(dirty_rect, clear_rect, &dirty_clear)) {
+  if (pd_intersection(dirty_rect, clear_rect, &dirty_clear)) {
     api->graphics->fillRect(
       dirty_clear.x,
       dirty_clear.y,
@@ -204,7 +204,7 @@ void draw_unused_capacity(LCDSprite* s, PDRect bounds, PDRect dirty_rect) {
     .height = bar_height
   };
   PDRect dirty_fill;
-  if (intersection(dirty_rect, fill_rect, &dirty_fill)) {
+  if (pd_intersection(dirty_rect, fill_rect, &dirty_fill)) {
     api->graphics->fillRect(
       dirty_fill.x,
       dirty_fill.y,
@@ -221,7 +221,7 @@ void draw_unused_capacity(LCDSprite* s, PDRect bounds, PDRect dirty_rect) {
     .height = bounds.height - bar_height
   };
   PDRect dirty_clear;
-  if (intersection(dirty_rect, clear_rect, &dirty_clear)) {
+  if (pd_intersection(dirty_rect, clear_rect, &dirty_clear)) {
     api->graphics->fillRect(
       dirty_clear.x,
       dirty_clear.y,

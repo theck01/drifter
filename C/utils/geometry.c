@@ -47,7 +47,32 @@ void math_vec_unit_normal(math_vec v, unit_vec* u, point pointing_away_from) {
   }
 }
 
-bool intersection(PDRect a, PDRect b, PDRect* result) {
+bool int_intersection(int_rect a, int_rect b, int_rect* result) {
+  PlaydateAPI* api = get_api();
+
+  int ax2 = a.x + a.width;
+  int ay2 = a.y + a.height;
+
+  int bx2 = b.x + b.width;
+  int by2 = b.y + b.height;
+
+  int ix = max(a.x, b.x);
+  int ix2 = min(ax2, bx2);
+  int iy = max(a.y, b.y);
+  int iy2 = min(ay2, by2);
+
+  if (ix >= ix2 || iy >= iy2) {
+    return false;
+  }
+
+  result->x = ix;
+  result->y = iy;
+  result->width = ix2 - ix;
+  result->height = iy2 - iy;
+  return true;
+}
+
+bool pd_intersection(PDRect a, PDRect b, PDRect* result) {
   PlaydateAPI* api = get_api();
 
   float ax2 = a.x + a.width;

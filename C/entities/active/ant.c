@@ -20,6 +20,8 @@
 static char* ANT_LABEL = "ANT";
 // MUST BE POWER OF 2
 static const uint8_t MAX_SPEED_PX = 8;
+static const uint8_t ANT_WIDTH_PX = 29;
+static const uint8_t ANT_HEIGHT_PX = 25;
 
 typedef enum {
   LEFT = 0,
@@ -136,12 +138,12 @@ void* ant_plan(void* self, va_list args) {
     int16_t velocity = current_extended->speed * 
       (current_extended->orientation == RIGHT ? 1 : -1);
     point destination = { 
-      .x = todo->core.position.x + velocity, 
-      .y = todo->core.position.y 
+      .x = todo->core.bounds.x + velocity, 
+      .y = todo->core.bounds.y 
     };
     point actual;
     if (sensor_can_entity_move(viewpoint, a->self, destination, &actual)) {
-      todo->core.position.x = destination.x;
+      todo->core.bounds.x = destination.x;
     } else {
       todo_extended->orientation = 
         todo_extended->orientation == LEFT ? RIGHT : LEFT;
@@ -176,13 +178,13 @@ void* ant_apply(void* self, va_list args) {
 
   if (
     !prev || 
-    current->core.position.x != prev->core.position.x || 
-    current->core.position.y != prev->core.position.y
+    current->core.bounds.x != prev->core.bounds.x || 
+    current->core.bounds.y != prev->core.bounds.y
   ) {
     api->sprite->moveTo(
       a->sprite, 
-      current->core.position.x, 
-      current->core.position.y
+      current->core.bounds.x, 
+      current->core.bounds.y
     );
   }
   if (!prev_extended || current_extended->action != prev_extended->action) {
@@ -232,8 +234,8 @@ void* ant_spawn(void* self, va_list args) {
   api->sprite->setZIndex(a->sprite, ACTOR_Z_INDEX);
   api->sprite->moveTo(
     a->sprite, 
-    model->core.position.x, 
-    model->core.position.y
+    model->core.bounds.x, 
+    model->core.bounds.y
   );
   api->sprite->addSprite(a->sprite);
   api->sprite->setVisible(a->sprite, shown);
@@ -282,7 +284,14 @@ ant* ant_create(world* w, int x, int y) {
     .ticks_to_next_decision = random_uint(15, 60)
   };
   entity_model initial_model = {
-    .core = { .position = { .x = x, .y = y } },
+    .core = { 
+      .bounds = { 
+        .x = x, 
+        .y = y, 
+        .width = ANT_WIDTH_PX, 
+        .height = ANT_HEIGHT_PX 
+      } 
+    },
     .extended = &initial_extended
   };
 

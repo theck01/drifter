@@ -21,7 +21,7 @@ struct attachment_struct {
 
 struct structure_struct {
   point center;
-  PDRect hitbox;
+  int_rect hitbox;
   surface* surfaces;
   uint8_t edge_count;
   closure* apply;
@@ -95,7 +95,7 @@ structure* structure_create(
     );
     math_vec_unit_normal(s->surfaces[i].edge, &(s->surfaces[i].normal), center);
   }
-  s->hitbox = (PDRect){ 
+  s->hitbox = (int_rect){ 
     .x = hitbox.left, 
     .y = hitbox.top, 
     .width = hitbox.right - hitbox.left,
@@ -132,7 +132,7 @@ void structure_log(structure* s) {
   api->system->logToConsole("Logging structure %p", s);
   api->system->logToConsole("- center: { %d, %d }", s->center.x, s->center.y);
   api->system->logToConsole(
-    "- hitbox: { %f, %f, w: %f, h: %f }", 
+    "- hitbox: { %d, %d, w: %d, h: %d }", 
     s->hitbox.x, 
     s->hitbox.y,
     s->hitbox.width,

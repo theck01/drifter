@@ -10,7 +10,7 @@
 typedef struct entity_struct entity;
 
 typedef struct entity_state_struct {
-  point position;
+  int_rect bounds;
 } entity_state;
 
 typedef struct entity_model_struct {
