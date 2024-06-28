@@ -1,4 +1,5 @@
 
+#include <stddef.h>
 #include <math.h>
 
 #include "C/api.h"
@@ -14,6 +15,36 @@ grid_pos grid_pos_for_point(point p) {
   gp.row = floorf((float)p.y / (float)MAP_TILE_SIZE_PX);
   gp.col = floorf((float)p.x / (float)MAP_TILE_SIZE_PX);
   return gp;
+}
+
+void math_vec_init(math_vec* v, point start, point end) {
+  memcpy(&v->start, &start, sizeof(point));
+  memcpy(&v->end, &end, sizeof(point));
+  v->magnitude = sqrtf(powf(end.x - start.x, 2) + powf(end.y - start.y, 2));
+}
+
+void math_to_unit_vec(math_vec v, unit_vec* u) {
+  u->x = (v.end.x - v.start.x) / v.magnitude;
+  u->y = (v.end.y - v.start.y) / v.magnitude;
+}
+
+void math_vec_unit_normal(math_vec v, unit_vec* u, point pointing_away_from) {
+  float a = v.end.x - v.start.x;
+  float b = v.end.y - v.start.y;
+  u->x = -b / v.magnitude;
+  u->y = a / v.magnitude;
+
+  // Dot product the new unit vector with a pseudovector from point_away_from to
+  // either end v. If the result is positive, the unit vector is correctly
+  // pointing away from the point. If the result is negative, invert its x and y
+  // to correct the vector direction
+  float pseudo_dot = 
+    (v.end.x - pointing_away_from.x) * u->x + 
+    (v.end.y - pointing_away_from.y) * u->y;
+  if (pseudo_dot < 0) {
+    u->x *= -1;
+    u->y *= -1;
+  }
 }
 
 bool intersection(PDRect a, PDRect b, PDRect* result) {

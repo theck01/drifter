@@ -17,6 +17,7 @@
 #include "C/core/crank-time.h"
 #include "C/core/fps-timers.h"
 #include "C/core/input-generator.h"
+#include "C/core/structure.h"
 #include "C/core/viewport.h"
 #include "C/core/world.h"
 #include "C/entities/active/ant.h"
