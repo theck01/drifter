@@ -41,7 +41,7 @@ static void* viewport_moved(void* world_to_cast, va_list args) {
     .x = p.x - MAP_TILE_SIZE_PX * VIEWPORT_TILE_SHOW_BUFFER,
     .y = p.y - MAP_TILE_SIZE_PX * VIEWPORT_TILE_SHOW_BUFFER
   };
-  w->visible_origin = grid_pos_for_point(show_point);
+  grid_pos_for_point(show_point, &(w->visible_origin));
 
   if (
     w->visible_origin.row != prev_visible.row || 
@@ -178,9 +178,8 @@ world* world_create(int tiles_wide, int tiles_tall) {
 void world_add_entity(world* w, entity* e) {
   entity_set_world(e, w);
 
-  point p;
-  entity_get_position(e, &p);
-  grid_pos gp = grid_pos_for_point(p);
+  grid_pos gp;
+  entity_get_grid_pos(e, &gp);
   if (
     gp.row < 0 || 
     gp.row >= w->tiles_tall || 
@@ -197,9 +196,8 @@ void world_add_entity(world* w, entity* e) {
 void world_remove_entity(world* w, entity* e) {
   entity_clear_world(e);
 
-  point p;
-  entity_get_position(e, &p);
-  grid_pos gp = grid_pos_for_point(p);
+  grid_pos gp;
+  entity_get_grid_pos(e, &gp);
   if (
     gp.row < 0 || 
     gp.row >= w->tiles_tall || 
@@ -214,11 +212,10 @@ void world_remove_entity(world* w, entity* e) {
 }
 
 void world_entity_moved(world* w, entity* e, point original) {
-  point current;
-  entity_get_position(e, &current);
-
-  grid_pos old = grid_pos_for_point(original);
-  grid_pos new = grid_pos_for_point(current);
+  grid_pos old;
+  grid_pos_for_point(original, &old);
+  grid_pos new;
+  entity_get_grid_pos(e, &new);
   if (old.row == new.row && old.col == new.col) {
     return;
   }

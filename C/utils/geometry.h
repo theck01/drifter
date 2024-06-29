@@ -20,7 +20,7 @@ typedef struct int_rect_struct {
   unsigned int height;
 } int_rect;
 
-grid_pos grid_pos_for_point(point p);
+void grid_pos_for_point(point p, grid_pos* gp);
 
 typedef struct math_vec_struct {
   point start;

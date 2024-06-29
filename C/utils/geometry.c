@@ -10,11 +10,9 @@
 
 #include "geometry.h"
 
-grid_pos grid_pos_for_point(point p) {
-  grid_pos gp;
-  gp.row = floorf((float)p.y / (float)MAP_TILE_SIZE_PX);
-  gp.col = floorf((float)p.x / (float)MAP_TILE_SIZE_PX);
-  return gp;
+void grid_pos_for_point(point p, grid_pos* gp) {
+  gp->row = p.y / MAP_TILE_SIZE_PX - (p.y < 0 ? 1 : 0); 
+  gp->col = p.x / MAP_TILE_SIZE_PX - (p.x < 0 ? 1 : 0); 
 }
 
 void math_vec_init(math_vec* v, point start, point end) {

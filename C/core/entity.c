@@ -68,7 +68,8 @@ static void entity_advance(entity* e) {
         .x = e->current_model->public.core.bounds.x,
         .y = e->current_model->public.core.bounds.y
       };
-      grid_pos location = grid_pos_for_point(p);
+      grid_pos location;
+      grid_pos_for_point(p, &location);
       // Assume the tile exists, because the entity was allowed to exist in the
       // current position.
       tile* t = world_get_tile(e->parent_world, location);
@@ -271,6 +272,14 @@ void entity_show(entity* e, bool show) {
 void entity_get_position(entity* e, point* p) {
   p->x = e->current_model->public.core.bounds.x;
   p->y = e->current_model->public.core.bounds.y;
+}
+
+void entity_get_grid_pos(entity* e, grid_pos* gp) {
+  point p = {
+    .x = e->current_model->public.core.bounds.x,  
+    .y = e->current_model->public.core.bounds.y
+  };
+  grid_pos_for_point(p, gp);
 }
 
 void entity_get_bounds(entity* e, int_rect* b) {
