@@ -6,7 +6,7 @@
 
 typedef void* (*allocator_fn)(void);
 typedef void (*destructor_fn)(void *);
-typedef void (*copy_fn)(void* source, void* destination);
+typedef void (*copy_fn)(void* destination, void* source);
 
 typedef struct grid_pos_struct {
   int row;

@@ -62,9 +62,9 @@ void ant_model_destructor(void* model) {
   free((ant_model*)model);
 }
 
-void ant_model_copy(void* source, void* dest) {
-  ant_model* ams = (ant_model*)source;
+void ant_model_copy(void * dest, void* source) {
   ant_model* amd = (ant_model*)dest;
+  ant_model* ams = (ant_model*)source;
   memcpy(amd, ams, sizeof(ant_model));
 }
 

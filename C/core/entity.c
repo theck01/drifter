@@ -62,7 +62,7 @@ static void entity_advance(entity* e) {
   entity_full_model* model = (entity_full_model*)history_stack_pop(e->redo);
   if (!model) {
     model = (entity_full_model*)memory_pool_next(e->model_pool);
-    closure_call(e->model_copy, e->current_model, model);
+    closure_call(e->model_copy, model, e->current_model);
     if (e->behavior.plan) {
       point p = { 
         .x = e->current_model->public.core.bounds.x,
@@ -97,7 +97,7 @@ static void entity_reverse(entity* e) {
 static void* entity_crank_update(void* context, va_list args) {
   entity* e = (entity*)context;
   int time_diff = va_arg(args, int);
-  closure_call(e->model_copy, e->current_model, e->scratch_model);
+  closure_call(e->model_copy, e->scratch_model, e->current_model);
   for (int i = time_diff; i > 0; i--) {
     entity_advance(e);
   }
@@ -138,8 +138,8 @@ void* entity_model_destructor(void* extended_destructor, va_list args) {
 }
 
 void* entity_model_copy(void* extended_copy, va_list args) {
-  entity_full_model* source = va_arg(args, entity_full_model*);
   entity_full_model* destination = va_arg(args, entity_full_model*);
+  entity_full_model* source = va_arg(args, entity_full_model*);
 
   // Keep a reference to the destinations extended model so that it can be
   // restored after memcpy, its contents should be copied but not its reference.
@@ -148,7 +148,7 @@ void* entity_model_copy(void* extended_copy, va_list args) {
   destination->public.extended = destination_extended;
 
   copy_fn ec = (copy_fn)extended_copy;
-  ec(source->public.extended, destination->public.extended);
+  ec(destination->public.extended, source->public.extended);
 
   return NULL;
 }
@@ -202,7 +202,7 @@ entity* entity_create(
   void* extended = e->current_model->public.extended;
   memcpy(&(e->current_model->public), init, sizeof(entity_model));
   e->current_model->public.extended = extended;
-  extended_model_copy(init->extended, e->current_model->public.extended);
+  extended_model_copy(e->current_model->public.extended, init->extended);
 
   e->behavior.apply = NULL;
   e->behavior.show = NULL;
