@@ -68,17 +68,6 @@ void ant_model_copy(void * dest, void* source) {
   memcpy(amd, ams, sizeof(ant_model));
 }
 
-void ant_model_print(ant_model* am) {
-  get_api()->system->logToConsole(
-    "{ x: %f, y: %f, action: %d, orientation: %d, speed: %d, ticks_to_next_decision: %d }", 
-    am->action, 
-    am->orientation, 
-    am->speed, 
-    am->ticks_to_next_decision
-  );
-}
-
-
 // ANIMATION LOADING
 
 // Animations stored with index pattern [action][orientation]
