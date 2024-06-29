@@ -83,6 +83,7 @@ void entity_set_active(entity* e, entity_active_behavior behavior);
 char* entity_get_label(entity* e);
 
 void entity_get_position(entity* e, point* p);
+void entity_get_bounds(entity* e, int_rect* b);
 
 void entity_destroy(entity* e);
 

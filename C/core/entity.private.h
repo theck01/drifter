@@ -2,6 +2,7 @@
 #define ENTITY_PRIVATE
 
 #include "world.h"
+
 #include "entity.h"
 
 void entity_show(entity* e, bool show);

@@ -8,10 +8,15 @@
 #include "C/utils/memory-pool.h"
 
 #include "world.private.h"
-#include "structure.private.h"
 #include "tile.private.h"
+#include "structure.h"
 
 #include "entity.private.h"
+
+typedef struct entity_full_model_struct {
+  entity_model public;
+  structure* foothold;
+} entity_full_model;
 
 typedef struct entity_full_behavior {
   closure* spawn;
@@ -26,19 +31,18 @@ struct entity_struct {
   history_stack* undo;
   history_stack* redo;
   memory_pool* model_pool;
-  entity_model* current_model;
-  entity_model* scratch_model;
+  entity_full_model* current_model;
+  entity_full_model* scratch_model;
   closure* model_destroy;
   closure* model_copy;
   entity_full_behavior behavior;
   gid_t crank_time_id;
   world* parent_world;
-  attachment* foothold;
   bool shown;
 };
 
-static void entity_set_current_model(entity* e, entity_model* model) {
-  int_rect old_bounds = e->current_model->core.bounds;
+static void entity_set_current_model(entity* e, entity_full_model* model) {
+  int_rect old_bounds = e->current_model->public.core.bounds;
 
   // Update entity model before notifying world it moved, so that the world
   // update uses correct positions.
@@ -46,8 +50,8 @@ static void entity_set_current_model(entity* e, entity_model* model) {
 
   if (
     e->parent_world && 
-    (model->core.bounds.x != old_bounds.x ||
-    model->core.bounds.y != old_bounds.y)
+    (model->public.core.bounds.x != old_bounds.x ||
+    model->public.core.bounds.y != old_bounds.y)
   ) {
     point p = { .x = old_bounds.x, .y = old_bounds.y };
     world_entity_moved(e->parent_world, e, p);
@@ -55,20 +59,25 @@ static void entity_set_current_model(entity* e, entity_model* model) {
 }
 
 static void entity_advance(entity* e) {
-  entity_model* model = (entity_model*)history_stack_pop(e->redo);
+  entity_full_model* model = (entity_full_model*)history_stack_pop(e->redo);
   if (!model) {
-    model = (entity_model*)memory_pool_next(e->model_pool);
+    model = (entity_full_model*)memory_pool_next(e->model_pool);
     closure_call(e->model_copy, e->current_model, model);
     if (e->behavior.plan) {
       point p = { 
-        .x = e->current_model->core.bounds.x,
-        .y = e->current_model->core.bounds.y
+        .x = e->current_model->public.core.bounds.x,
+        .y = e->current_model->public.core.bounds.y
       };
       grid_pos location = grid_pos_for_point(p);
       // Assume the tile exists, because the entity was allowed to exist in the
       // current position.
       tile* t = world_get_tile(e->parent_world, location);
-      closure_call(e->behavior.plan, model, e->current_model, t->sensor);
+      closure_call(
+        e->behavior.plan, 
+        &(model->public), 
+        &(e->current_model->public), 
+        t->sensor
+      );
     }
   }
   history_stack_push(e->undo, model);
@@ -77,7 +86,7 @@ static void entity_advance(entity* e) {
 }
 
 static void entity_reverse(entity* e) {
-  entity_model* model = history_stack_pop(e->undo);
+  entity_full_model* model = history_stack_pop(e->undo);
   if (model) {
     history_stack_push(e->redo, model);
     entity_set_current_model(e, model);
@@ -98,36 +107,47 @@ static void* entity_crank_update(void* context, va_list args) {
   // ticks have passed, because only the final application will be rendered
   // to the screen and earlier applications are a waste.
   if (e->shown) {
-    closure_call(e->behavior.apply, e->current_model, e->scratch_model);
+    closure_call(
+      e->behavior.apply, 
+      &(e->current_model->public), 
+      &(e->scratch_model->public)
+    );
   }
   return NULL;
 }
 
 void* entity_model_allocator(void* extended_allocator, va_list _) {
-  entity_model* model = malloc(sizeof(entity_model));
+  entity_full_model* model = malloc(sizeof(entity_full_model));
   if (!model) {
-    get_api()->system->error("Could not allocate memory for entity model");
+    get_api()->system->error(
+      "Could not allocate memory for entity full model"
+    );
   }
   allocator_fn ea = (allocator_fn)extended_allocator;
-  model->extended = ea();
+  model->public.extended = ea();
   return model;
 }
 
 void* entity_model_destructor(void* extended_destructor, va_list args) {
-  entity_model* model = va_arg(args, entity_model*);
+  entity_full_model* model = va_arg(args, entity_full_model*);
   destructor_fn ed = (destructor_fn)extended_destructor;
-  ed(model->extended);
+  ed(model->public.extended);
   free(model);
   return NULL;
 }
 
 void* entity_model_copy(void* extended_copy, va_list args) {
-  entity_model* source = va_arg(args, entity_model*);
-  entity_model* destination = va_arg(args, entity_model*);
-  copy_fn ec = (copy_fn)extended_copy;
+  entity_full_model* source = va_arg(args, entity_full_model*);
+  entity_full_model* destination = va_arg(args, entity_full_model*);
 
-  memcpy(&destination->core, &source->core, sizeof(entity_state));
-  ec(source->extended, destination->extended);
+  // Keep a reference to the destinations extended model so that it can be
+  // restored after memcpy, its contents should be copied but not its reference.
+  void* destination_extended = destination->public.extended;
+  memcpy(destination, source, sizeof(entity_full_model));
+  destination->public.extended = destination_extended;
+
+  copy_fn ec = (copy_fn)extended_copy;
+  ec(source->public.extended, destination->public.extended);
 
   return NULL;
 }
@@ -174,9 +194,14 @@ entity* entity_create(
     allocator,
     destructor
   );
-  e->current_model = (entity_model*)memory_pool_next(e->model_pool);
+  e->current_model = (entity_full_model*)memory_pool_next(e->model_pool);
   e->model_copy = closure_create(extended_model_copy, entity_model_copy);
-  closure_call(e->model_copy, init, e->current_model);
+
+  // Setup current full model based on the initial public model.
+  void* extended = e->current_model->public.extended;
+  memcpy(&(e->current_model->public), init, sizeof(entity_model));
+  e->current_model->public.extended = extended;
+  extended_model_copy(init->extended, e->current_model->public.extended);
 
   e->behavior.apply = NULL;
   e->behavior.show = NULL;
@@ -239,18 +264,22 @@ void entity_show(entity* e, bool show) {
   closure_call(e->behavior.show, show);
   // If showing, reapply the entire current state.
   if (show) {
-    closure_call(e->behavior.apply, e->current_model, NULL);
+    closure_call(e->behavior.apply, &(e->current_model->public), NULL);
   }
 }
 
 void entity_get_position(entity* e, point* p) {
-  p->x = e->current_model->core.bounds.x;
-  p->y = e->current_model->core.bounds.y;
+  p->x = e->current_model->public.core.bounds.x;
+  p->y = e->current_model->public.core.bounds.y;
+}
+
+void entity_get_bounds(entity* e, int_rect* b) {
+  memcpy(b, &(e->current_model->public.core.bounds), sizeof(int_rect));
 }
 
 void entity_move_to(entity* e, point p) {
-  e->current_model->core.bounds.x = p.x;
-  e->current_model->core.bounds.y = p.y;
+  e->current_model->public.core.bounds.x = p.x;
+  e->current_model->public.core.bounds.y = p.y;
 }
 
 void entity_destroy(entity* e) {
@@ -286,7 +315,11 @@ void entity_set_world(entity* e, world* w) {
   }
 
   e->parent_world = w;
-  closure_call(e->behavior.spawn, e->current_model, e->shown ? 1 : 0);
+  closure_call(
+    e->behavior.spawn, 
+    &(e->current_model->public), 
+    e->shown ? 1 : 0
+  );
   e->crank_time_id = crank_time_add_listener(
     closure_create(e, entity_crank_update)
   );
