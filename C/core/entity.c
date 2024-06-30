@@ -97,17 +97,22 @@ static void entity_reverse(entity* e) {
 static void* entity_crank_update(void* context, va_list args) {
   entity* e = (entity*)context;
   int time_diff = va_arg(args, int);
-  closure_call(e->model_copy, e->scratch_model, e->current_model);
-  for (int i = time_diff; i > 0; i--) {
-    entity_advance(e);
+  int current_time = va_arg(args, int);
+  crank_mask_e crank_mask = (crank_mask_e)va_arg(args, int);
+  if (crank_mask & START) {
+    closure_call(e->model_copy, e->scratch_model, e->current_model);
   }
-  for (int i = time_diff; i < 0; i++) {
+
+  if (time_diff > 0) {
+    entity_advance(e);
+  } else {
     entity_reverse(e);
   }
+
   // Model changes need to be applied only once, even if multiple crank
   // ticks have passed, because only the final application will be rendered
   // to the screen and earlier applications are a waste.
-  if (e->shown) {
+  if ((crank_mask & END) && e->shown) {
     closure_call(
       e->behavior.apply, 
       &(e->current_model->public), 

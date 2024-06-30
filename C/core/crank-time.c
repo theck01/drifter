@@ -29,6 +29,7 @@ static const float CONSISTENCY_MULTIPLIER_INCREMENT_PER_TICK =
 static float degrees_per_tick = 0;
 static int8_t last_tick = -1;
 static event_emitter* emitter = NULL;
+static int current_time = 0;
 
 // for crank multiplier relative tick
 
@@ -133,7 +134,19 @@ void crank_time_update(void) {
     ),
     INT8_MAX
   );
-  if (applied_diff != 0) {
-    event_emitter_fire(emitter, applied_diff);
+
+  // The first event will always be a START
+  crank_mask_e mask = START;
+  int8_t unit_diff = applied_diff > 0 ? 1 : -1;
+  while (applied_diff != 0) {
+    // If this is the last diff to apply, include END in the mask (maybe
+    // combining with START if there is only 1 tick to process)
+    if (applied_diff == unit_diff) {
+      mask |= END;
+    }
+    current_time += unit_diff;
+    event_emitter_fire(emitter, unit_diff, current_time, mask);
+    applied_diff -= unit_diff;
+    mask = 0;
   }
 }
