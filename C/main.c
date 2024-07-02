@@ -21,7 +21,6 @@
 #include "C/core/viewport.h"
 #include "C/core/world.h"
 #include "C/entities/active/ant.h"
-#include "C/ui/history-gauge.h"
 #include "C/ui/map-grid.h"
 #include "C/utils/random.h"
 #include "C/utils/vector.h"
@@ -73,7 +72,6 @@ int eventHandler(
     }
 
     default_controls = create_controls();
-    history_gauge_connect();
     map_grid_show();
     viewport_connect(default_controls);
     viewport_set_offset(400, 0);

@@ -7,8 +7,6 @@
 
 void entity_show(entity* e, bool show);
 
-void entity_move_to(entity* e, point p);
-
 void entity_set_world(entity* e,  world* w);
 
 void entity_clear_world(entity* e);

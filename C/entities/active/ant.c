@@ -116,79 +116,63 @@ static void load_animations_if_needed(void) {
 
 void* ant_plan(void* self, va_list args) {
   ant* a = (ant*)self;
-  entity_model* todo = va_arg(args, entity_model*);
-  entity_model* current = va_arg(args, entity_model*);
+  ant_model* model = va_arg(args, ant_model*);
   sensor* viewpoint = va_arg(args, sensor*);
 
-  ant_model* todo_extended = (ant_model*)todo->extended;
-  ant_model* current_extended = (ant_model*)current->extended;
-
-  if (current_extended->action == WALK) {
-    int16_t velocity = current_extended->speed * 
-      (current_extended->orientation == RIGHT ? 1 : -1);
-    point destination = { 
-      .x = todo->core.bounds.x + velocity, 
-      .y = todo->core.bounds.y 
-    };
-    point actual;
+  if (model->action == WALK) {
+    int16_t velocity = model->speed * 
+      (model->orientation == RIGHT ? 1 : -1);
+    point destination, actual;
+    entity_get_position(a->self, &destination);
+    destination.x += velocity;
     if (sensor_can_entity_move(viewpoint, a->self, destination, &actual)) {
-      todo->core.bounds.x = destination.x;
+      entity_move_to(a->self, destination);
     } else {
-      todo_extended->orientation = 
-        todo_extended->orientation == LEFT ? RIGHT : LEFT;
+      model->orientation = 
+        model->orientation == LEFT ? RIGHT : LEFT;
     }
 
-    if (current_extended->ticks_to_next_decision < 4) {
-      todo_extended->speed >>= 1;
-    } else if (current_extended->speed < MAX_SPEED_PX) {
-      todo_extended->speed <<= 1;
+    if (model->ticks_to_next_decision < 4) {
+      model->speed >>= 1;
+    } else if (model->speed < MAX_SPEED_PX) {
+      model->speed <<= 1;
     }
   }
 
-  if (current_extended->ticks_to_next_decision == 0) {
-    todo_extended->action = randomf() > 0.5f ? WALK : IDLE;
-    if (todo_extended->action == WALK) {
-      todo_extended->speed = 1;
+  if (model->ticks_to_next_decision == 0) {
+    model->action = randomf() > 0.5f ? WALK : IDLE;
+    if (model->action == WALK) {
+      model->speed = 1;
     }
-    todo_extended->orientation = randomf() > 0.5f ? LEFT : RIGHT;
-    todo_extended->ticks_to_next_decision = random_uint(15,60);
+    model->orientation = randomf() > 0.5f ? LEFT : RIGHT;
+    model->ticks_to_next_decision = random_uint(15,60);
   }
-  todo_extended->ticks_to_next_decision--;
+  model->ticks_to_next_decision--;
   return NULL;
 }
 
 void* ant_apply(void* self, va_list args) {
   PlaydateAPI* api = get_api();
   ant* a = (ant*)self;
-  entity_model* current = va_arg(args, entity_model*);
-  ant_model* current_extended = (ant_model*)current->extended;
-  entity_model* prev = va_arg(args, entity_model*);
-  ant_model* prev_extended = prev ? (ant_model*)prev->extended : NULL;
+  ant_model* current = va_arg(args, ant_model*);
+  ant_model* prev = va_arg(args, ant_model*);
+  int did_move = va_arg(args, int);
 
-  if (
-    !prev || 
-    current->core.bounds.x != prev->core.bounds.x || 
-    current->core.bounds.y != prev->core.bounds.y
-  ) {
-    api->sprite->moveTo(
-      a->sprite, 
-      current->core.bounds.x, 
-      current->core.bounds.y
-    );
+  if (did_move) {
+    point p;
+    entity_get_position(a->self, &p);
+    api->sprite->moveTo(a->sprite, p.x, p.y);
   }
-  if (!prev_extended || current_extended->action != prev_extended->action) {
+  if (!prev || current->action != prev->action) {
     sprite_animator_set_animation_and_frame(
       a->animator, 
-      ant_animations[current_extended->action][current_extended->orientation],
+      ant_animations[current->action][current->orientation],
       0 /* starting frame */
     );
-  } else if (
-    !prev_extended || 
-    current_extended->orientation != prev_extended->orientation
-  ) {
+  } else if (!prev || current->orientation != prev->orientation) {
     sprite_animator_set_animation(
       a->animator, 
-      ant_animations[current_extended->action][current_extended->orientation]
+      ant_animations[current->action][current->orientation]
     );
   }
   return NULL;
@@ -197,8 +181,8 @@ void* ant_apply(void* self, va_list args) {
 void* ant_show(void* self, va_list args) {
   PlaydateAPI* api = get_api();
   ant* a = (ant*)self;
-  bool show = (bool)va_arg(args, int);
-  api->sprite->setVisible(a->sprite, show ? 1 : 0);
+  int show = (bool)va_arg(args, int);
+  api->sprite->setVisible(a->sprite, show);
   if (show) {
     sprite_animator_resume(a->animator);
   } else {
@@ -214,31 +198,25 @@ void* ant_spawn(void* self, va_list args) {
     api->system->error("Cannot spawn ant that already has spawned");
   }
 
-  entity_model* model = va_arg(args, entity_model*);
-  int shown = va_arg(args, int);
+  ant_model* model = va_arg(args, ant_model*);
 
-  ant_model* extended_model = (ant_model*)model->extended;
+  point p;
+  entity_get_position(a->self, &p);
 
   a->sprite = create_draw_only_sprite();
+  api->sprite->moveTo(a->sprite, p.x, p.y);
   api->sprite->setZIndex(a->sprite, ACTOR_Z_INDEX);
-  api->sprite->moveTo(
-    a->sprite, 
-    model->core.bounds.x, 
-    model->core.bounds.y
-  );
   api->sprite->addSprite(a->sprite);
-  api->sprite->setVisible(a->sprite, shown);
+  api->sprite->setVisible(a->sprite, false);
 
   a->animator = sprite_animator_create(
     a->sprite,
-    ant_animations[extended_model->action][extended_model->orientation], 
+    ant_animations[model->action][model->orientation], 
     12 /* fps */, 
     0 /* starting_frame */
   );
   sprite_animator_start(a->animator);
-  if (!shown) {
-    sprite_animator_pause(a->animator);
-  }
+  sprite_animator_pause(a->animator);
   
   return NULL;
 }
@@ -266,47 +244,39 @@ ant* ant_create(world* w, int x, int y) {
     get_api()->system->error("Could not allocate memory for ant");
   }
 
+  a->id = getNextGID();
+
   ant_model initial_extended = {
     .action = IDLE,
     .orientation = RIGHT,
     .speed = 0,
     .ticks_to_next_decision = random_uint(15, 60)
   };
-  entity_model initial_model = {
-    .core = { 
-      .bounds = { 
-        .x = x, 
-        .y = y, 
-        .width = ANT_WIDTH_PX, 
-        .height = ANT_HEIGHT_PX 
-      } 
-    },
-    .extended = &initial_extended
+  int_rect bounds = { 
+    .x = x, 
+    .y = y, 
+    .width = ANT_WIDTH_PX, 
+    .height = ANT_HEIGHT_PX 
   };
-
-  a->id = getNextGID();
-
+  entity_behavior behavior = {
+    .spawn = closure_create(a, ant_spawn),
+    .show = closure_create(a, ant_show),
+    .apply = closure_create(a, ant_apply),
+    .despawn = closure_create(a, ant_despawn),
+    .plan = closure_create(a, ant_plan)
+  };
   a->self = entity_create(
     ANT_LABEL,
+    &bounds,
+    &initial_extended,
+    &behavior,
     ant_model_allocator,
     ant_model_destructor,
-    ant_model_copy,
-    &initial_model
+    ant_model_copy
   );
 
   a->sprite = NULL;
   a->animator = NULL;
-
-  entity_active_behavior behavior = {
-    .base = {
-      .spawn = closure_create(a, ant_spawn),
-      .show = closure_create(a, ant_show),
-      .apply = closure_create(a, ant_apply),
-      .despawn = closure_create(a, ant_despawn)
-    },
-    .plan = closure_create(a, ant_plan)
-  };
-  entity_set_active(a->self, behavior);
 
   world_add_entity(w, a->self);
 

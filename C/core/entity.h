@@ -9,31 +9,25 @@
 
 typedef struct entity_struct entity;
 
-typedef struct entity_state_struct {
-  int_rect bounds;
-} entity_state;
-
-typedef struct entity_model_struct {
-  entity_state core;
-  void* extended;
-} entity_model;
-
-typedef struct entity_base_behavior_struct {
+typedef struct entity_behavior_struct {
   /*
-   * spawn(entity_model* model, bool show): Generate any sprites/sounds
+   * spawn(void* extended_model): Generate any sprites/sounds
    * associated with the entity. Called on addition to the world.
    */
   closure* spawn;
   /*
-   * apply(entity_model* model, entity_model* prev_model): Update any secondary
-   *   effects to match model. prev_model may be NULL if there is no previous 
-   *   valid state.
+   * apply(void* extended_model, void* extended_model, int did_move): Update any
+   *   secondary effects to match model. prev_model may be NULL if there is no
+   *   previous valid state.
+   *
+   *   Sprite positions only need be changed if did_move is 1, otherwise will
+   *   be 0.
    *
    *   Most commonly updating sprites or sounds to reflect the model change.
    */
   closure* apply;
   /*
-   * show(bool should_show): Show or hide secondary effects such as sprites
+   * show(int should_show): Show or hide secondary effects such as sprites
    *   sound effects, most commonly for when objects are positioned far off
    *   screen.
    *
@@ -45,22 +39,16 @@ typedef struct entity_base_behavior_struct {
    * when it is removed from the world
    */
   closure* despawn;
-} entity_base_behavior;
-
-typedef struct entity_active_behavior_struct {
-  entity_base_behavior base;
-
   /*
    * plan(
    *   entity_model* model_to_update, 
-   *   entity_model* current_model,
    *   sensor* viewpoint
    * ): Update the argument model to advance one time unit. Both models are set
    *   to same state at beginning model_to_update is the only one that should be
    *   modified.
    */
   closure* plan;
-} entity_active_behavior;
+} entity_behavior;
 
 /*
  * Creates the memory needed for the entity, but does not start running its
@@ -71,20 +59,21 @@ typedef struct entity_active_behavior_struct {
  */
 entity* entity_create(
   char* label,
+  int_rect* bounds_to_copy,
+  void* model_init, 
+  entity_behavior* behavior,
   allocator_fn model_allocator,
   destructor_fn model_destructor,
-  copy_fn model_copy,
-  entity_model* init 
+  copy_fn model_copy
 );
-
-void entity_set_behavior(entity* e, entity_base_behavior behavior);
-void entity_set_active(entity* e, entity_active_behavior behavior);
 
 char* entity_get_label(entity* e);
 
 void entity_get_position(entity* e, point* p);
 void entity_get_grid_pos(entity* e, grid_pos* gp);
 void entity_get_bounds(entity* e, int_rect* b);
+
+void entity_move_to(entity* e, point p);
 
 void entity_destroy(entity* e);
 

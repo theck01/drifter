@@ -17,12 +17,11 @@ typedef enum {
 /*
  * Closures:
  * listener(
- *   int8_t time_diff, 
- *   int current_time, // Either 1 or -1
+ *   int current_time,
  *   crank_mask_e,
  * ): Called when the cranking causes time to change
  */
-gid_t crank_time_add_listener(closure* listener);
+gid_t crank_time_advance_listener(closure* listener);
 
 void crank_time_remove_listener(gid_t id);
 

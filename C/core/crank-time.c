@@ -16,13 +16,13 @@
 static const uint8_t HISTORY_SIZE_TPS = 4;
 static const float HISTORY_DURATION_SEC = 
   HISTORY_SIZE_TPS / (float)CRANK_TICKS_PER_REVOLUTION;
-static const float MINIMUM_MULTIPLIER_TPS = (7.f/6.f) * CRANK_TICKS_PER_REVOLUTION;
-static const float MAX_CONSISTENCY_MULTIPLIER = 2.f;
-static const float MAX_SPEED_MULTIPLIER = 2.f;
-// VALUEx over crank speed required to increment speed multiplier 1x
+static const float MINIMUM_MULTIPLIER_TPS = (6.f/7.f) * CRANK_TICKS_PER_REVOLUTION;
+static const float MAX_CONSISTENCY_MULTIPLIER = 1.2;
+static const float MAX_SPEED_MULTIPLIER = 1.6f;
+// VALUEx over crank speed required to max speed multiplier
 static const float OVERSPEED_RATIO = 2.f; 
 static const float CONSISTENCY_MULTIPLIER_INCREMENT_PER_TICK = 
-  1.0f / (2 * CRANK_TICKS_PER_REVOLUTION);
+  (MAX_CONSISTENCY_MULTIPLIER - 1.0f) / (3 * CRANK_TICKS_PER_REVOLUTION);
 
 // for absolute tick calculation
 
@@ -54,7 +54,7 @@ void initialize_if_needed(void) {
   }
 }
 
-gid_t crank_time_add_listener(closure* c) {
+gid_t crank_time_advance_listener(closure* c) {
   initialize_if_needed();
   return event_emitter_add(emitter, c);
 }
@@ -137,16 +137,14 @@ void crank_time_update(void) {
 
   // The first event will always be a START
   crank_mask_e mask = START;
-  int8_t unit_diff = applied_diff > 0 ? 1 : -1;
-  while (applied_diff != 0) {
+  while (applied_diff > 0) {
     // If this is the last diff to apply, include END in the mask (maybe
     // combining with START if there is only 1 tick to process)
-    if (applied_diff == unit_diff) {
+    if (applied_diff == 1) {
       mask |= END;
     }
-    current_time += unit_diff;
-    event_emitter_fire(emitter, unit_diff, current_time, mask);
-    applied_diff -= unit_diff;
+    event_emitter_fire(emitter, ++current_time, mask);
+    applied_diff--;
     mask = 0;
   }
 }
