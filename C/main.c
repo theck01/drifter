@@ -14,7 +14,8 @@
 
 #include "C/api.h"
 #include "C/core/controls.h"
-#include "C/core/crank-time.h"
+#include "C/core/crank.h"
+#include "C/core/game-clock.h"
 #include "C/core/fps-timers.h"
 #include "C/core/input-generator.h"
 #include "C/core/sprite-animator.h"
@@ -34,18 +35,18 @@ static controls* default_controls = NULL;
 static PlaydateAPI* api = NULL;
 gid_t animation_listener_id = INVALID_GID;
 
-void* crank_timers(void* _, va_list args) {
+void* game_speed_animate(void* _, va_list args) {
   int current_time = va_arg(args, int);
-  crank_mask_e crank_mask = (crank_mask_e)va_arg(args, int);
+  clock_mask_e clock_mask = (clock_mask_e)va_arg(args, int);
   // == specifically to mean that it is not START | END;
-  if (crank_mask == START) {
+  if (clock_mask == START) {
     sprite_animator_global_pause();
   }
 
   fps_timers_update();
 
   // == specifically to mean that it is not START | END;
-  if (crank_mask == END) {
+  if (clock_mask == END) {
     sprite_animator_global_resume();
   }
   return NULL;
@@ -53,7 +54,8 @@ void* crank_timers(void* _, va_list args) {
 
 int update_loop(void* _) {
   input_generator_flush(default_controls);
-  crank_time_update();
+  crank_check();
+  game_clock_update();
   api->sprite->updateAndDrawSprites();
   api->system->drawFPS(0, 0);
   return 1;
@@ -94,7 +96,7 @@ int eventHandler(
     viewport_connect(default_controls);
     viewport_set_offset(400, 0);
 
-    crank_time_advance_listener(closure_create(NULL, crank_timers));
+    game_clock_add_listener(closure_create(NULL, game_speed_animate));
 
     // Redraw all sprites on every frame and avoid dirty rect tracking.
     // The number of sprites planned to be moving around screen causes the

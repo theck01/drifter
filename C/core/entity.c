@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "C/api.h"
-#include "C/core/crank-time.h"
+#include "C/core/game-clock.h"
 
 #include "world.private.h"
 #include "tile.private.h"
@@ -27,28 +27,28 @@ struct entity_struct {
 
   entity_behavior behavior;
 
-  gid_t crank_time_id;
+  gid_t game_clock_id;
 
   // Used to reduce calls to memcpy and behavior.apply
-  void* model_before_crank;
-  int_rect bounds_before_crank;
+  void* model_beofre;
+  int_rect bounds_beofre;
   bool was_shown;
-  bool is_cranking;
+  bool is_game_advancing;
 };
 
 static void* entity_crank_advance(void* context, va_list args) {
   entity* e = (entity*)context;
   int current_time = va_arg(args, int);
-  crank_mask_e crank_mask = (crank_mask_e)va_arg(args, int);
-  if (crank_mask & START) {
-    e->is_cranking = true;
+  clock_mask_e clock_mask = (clock_mask_e)va_arg(args, int);
+  if (clock_mask & START) {
+    e->is_game_advancing = true;
     e->was_shown=e->shown;
     // Only do a moderately expensive model copy if the entity is shown,
     // Hidden entites initialize secondary effects at the end of crankiing, with
     // NULL prior state
     if (e->shown) {
-      memcpy(&(e->bounds_before_crank), &(e->bounds), sizeof(int_rect));
-      e->model_copy(e->model_before_crank, e->model);
+      memcpy(&(e->bounds_beofre), &(e->bounds), sizeof(int_rect));
+      e->model_copy(e->model_beofre, e->model);
     }
   }
 
@@ -62,20 +62,20 @@ static void* entity_crank_advance(void* context, va_list args) {
   // Model changes need to be applied only once, even if multiple crank
   // ticks have passed, because only the final application will be rendered
   // to the screen and earlier applications are a waste.
-  if (crank_mask & END) {
+  if (clock_mask & END) {
     if (e->shown) {
       bool did_move = 
           !e->was_shown || 
-          e->bounds.x != e->bounds_before_crank.x ||
-          e->bounds.y != e->bounds_before_crank.y;
+          e->bounds.x != e->bounds_beofre.x ||
+          e->bounds.y != e->bounds_beofre.y;
       closure_call(
         e->behavior.apply, 
         e->model, 
-        e->was_shown ? e->model_before_crank : NULL,
+        e->was_shown ? e->model_beofre : NULL,
         did_move ? 1 : 0
       );
     }
-    e->is_cranking = false;
+    e->is_game_advancing = false;
   }
   return NULL;
 }
@@ -109,16 +109,16 @@ entity* entity_create(
   e->model = model_allocator();
   model_copy(e->model, model_init);
 
-  // crank update will copy the state into before_crank when the before_crank is
+  // crank update will copy the state into beofre when the beofre is
   // needed, so initializing the remainder can be skipped.
-  e->model_before_crank = model_allocator();
+  e->model_beofre = model_allocator();
 
   memcpy(&(e->behavior), behavior, sizeof(entity_behavior));
-  e->crank_time_id = INVALID_GID;
+  e->game_clock_id = INVALID_GID;
   e->parent_world = NULL;
   e->shown = false;
   e->was_shown = false;
-  e->is_cranking = false;
+  e->is_game_advancing = false;
 
   return e;
 }
@@ -141,8 +141,8 @@ void entity_show(entity* e, bool show) {
   closure_call(e->behavior.show, show ? 1 : 0);
   // If showing, reapply the entire current state. Skip if actively cranking,
   // apply will be called once at the end of the crank processing.
-  if (show && !e->is_cranking) {
-    closure_call(e->behavior.apply, e->model, NULL);
+  if (show && !e->is_game_advancing) {
+    closure_call(e->behavior.apply, e->model, NULL, 1 /* did_move */);
   }
 }
 
@@ -186,7 +186,7 @@ void entity_destroy(entity* e) {
   e->behavior.plan = NULL;
 
   e->model_destroy(e->model);
-  e->model_destroy(e->model_before_crank);
+  e->model_destroy(e->model_beofre);
   e->model_destroy = NULL;
   e->model_copy = NULL;
 }
@@ -202,7 +202,7 @@ void entity_set_world(entity* e, world* w) {
 
   e->parent_world = w;
   closure_call(e->behavior.spawn, e->model);
-  e->crank_time_id = crank_time_advance_listener(
+  e->game_clock_id = game_clock_add_listener(
     closure_create(e, entity_crank_advance)
   );
 }
@@ -212,8 +212,8 @@ void entity_clear_world(entity* e) {
     get_api()->system->error("Entity does not belong to a world");
   }
 
-  crank_time_remove_listener(e->crank_time_id);
-  e->crank_time_id = INVALID_GID;
+  game_clock_remove_listener(e->game_clock_id);
+  e->game_clock_id = INVALID_GID;
 
   closure_call(e->behavior.despawn);
   e->parent_world = NULL;
