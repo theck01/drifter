@@ -13,16 +13,8 @@
 
 #include "crank-time.h"
 
-static const uint8_t HISTORY_SIZE_TPS = 4;
-static const float HISTORY_DURATION_SEC = 
-  HISTORY_SIZE_TPS / (float)CRANK_TICKS_PER_REVOLUTION;
-static const float MINIMUM_MULTIPLIER_TPS = (6.f/7.f) * CRANK_TICKS_PER_REVOLUTION;
-static const float MAX_CONSISTENCY_MULTIPLIER = 1.2;
-static const float MAX_SPEED_MULTIPLIER = 1.6f;
-// VALUEx over crank speed required to max speed multiplier
-static const float OVERSPEED_RATIO = 2.f; 
-static const float CONSISTENCY_MULTIPLIER_INCREMENT_PER_TICK = 
-  (MAX_CONSISTENCY_MULTIPLIER - 1.0f) / (3 * CRANK_TICKS_PER_REVOLUTION);
+const float TICKS_PER_RATE_INCREMENT = 2;
+const int ROLLING_FRAME_WINDOW = 12;
 
 // for absolute tick calculation
 
@@ -31,15 +23,22 @@ static int8_t last_tick = -1;
 static event_emitter* emitter = NULL;
 static int current_time = 0;
 
-// for crank multiplier relative tick
-
-static history_stack* tick_history;
-static float average_tps = 0;
-static int16_t running_diff_sum = 0;
-static float consistency_multiplier = 1.0f;
+// rate state
+typedef enum {
+	ZERO = 0,
+	MIN = 1,
+	LOW = 2,
+	NORMAL_A = 3,
+	NORMAL_B = 4,
+	HI = 5,
+	MAX = 6
+} tick_rate_e;
+static int raw_rate = 0;
+static tick_rate_e current_rate = 0;
+static uint8_t rolling_frame_count = 0;
 
 void initialize_if_needed(void) {
-  if (!emitter || !tick_history) {
+  if (!emitter) {
     degrees_per_tick = 360.0f / CRANK_TICKS_PER_REVOLUTION;
 
     float last_angle = get_api()->system->getCrankAngle();
@@ -47,10 +46,6 @@ void initialize_if_needed(void) {
     last_tick = raw_tick == CRANK_TICKS_PER_REVOLUTION ? 0 : raw_tick;
 
     emitter = event_emitter_create();
-    tick_history = history_stack_create(HISTORY_SIZE_TPS);
-    for (uint8_t i=0; i<HISTORY_SIZE_TPS; i++) {
-      history_stack_push(tick_history, (void *)0);
-    }
   }
 }
 
@@ -66,6 +61,7 @@ void crank_time_remove_listener(gid_t id) {
 
 void crank_time_update(void) {
   initialize_if_needed();
+	rolling_frame_count = (rolling_frame_count+1) % ROLLING_FRAME_WINDOW;
 
   float current_angle = get_api()->system->getCrankAngle();
   float last_tick_angle = degrees_per_tick * last_tick;
@@ -89,62 +85,54 @@ void crank_time_update(void) {
   } else if (!angle_increasing && (current_tick > last_tick)) {
     tick_correction = -CRANK_TICKS_PER_REVOLUTION;
   }
-  intptr_t tick_diff = current_tick - last_tick + tick_correction;
+  int8_t tick_diff = current_tick - last_tick + tick_correction;
   last_tick = current_tick;
 
-  intptr_t oldest_diff = (intptr_t)history_stack_push(tick_history, (void*)tick_diff);
-  int16_t old_sum = running_diff_sum;
-  running_diff_sum += tick_diff - oldest_diff;
-  average_tps = fabsf(running_diff_sum / HISTORY_DURATION_SEC);
-
-  if (running_diff_sum && !old_sum) {
-    sprite_animator_global_pause();
-  }
-  if (!running_diff_sum && old_sum) {
-    sprite_animator_global_resume();
-  }
-
-  float speed_multiplier = 1.0f;
-  if (average_tps > MINIMUM_MULTIPLIER_TPS) {
-    consistency_multiplier = min( 
-      (
-        consistency_multiplier + 
-        (tick_diff > 0 ? tick_diff : -tick_diff) * 
-        CONSISTENCY_MULTIPLIER_INCREMENT_PER_TICK
-      ),
-      MAX_CONSISTENCY_MULTIPLIER
-    );
-    speed_multiplier = min(
-      1 + (average_tps - MINIMUM_MULTIPLIER_TPS) / (OVERSPEED_RATIO * MINIMUM_MULTIPLIER_TPS),
-      MAX_SPEED_MULTIPLIER
-    );
-  } else {
-    // decay consistency multiplier by a ratio based on how close the crank
-    // rate is to the multiplier
-    consistency_multiplier = max(
-      consistency_multiplier * average_tps / MINIMUM_MULTIPLIER_TPS,
-      1.0f
-    );
-  }
-
-  int8_t applied_diff = min(
-    max(
-      roundf(tick_diff * consistency_multiplier * speed_multiplier),
-      INT8_MIN
-    ),
-    INT8_MAX
-  );
+	int ticks = 0;
+	raw_rate = max(
+		min(raw_rate + tick_diff, MAX * TICKS_PER_RATE_INCREMENT), 
+		ZERO
+	);
+	current_rate = raw_rate / TICKS_PER_RATE_INCREMENT;
+	int is1in3 = (rolling_frame_count % 3 == 0) ? 1 : 0; 
+	int is1in2 = (rolling_frame_count % 2 == 0) ? 1 : 0;
+	int is1in4 = (rolling_frame_count % 4 == 0) ? 1 : 0; 
+	int is2in3 = (is1in2 || is1in3);
+	int is3in4 = (is2in3 || rolling_frame_count % 5 == 0) ? 1 : 0;
+	int is5in6 = (is3in4 || rolling_frame_count % 7 == 0) ? 1 : 0;
+	int is7in12 = (is1in2 || rolling_frame_count % 5 == 0) ? 1 : 0;
+	switch(current_rate) {
+		case MIN:
+			ticks = is1in4;
+			break;
+		case LOW:
+			ticks = is7in12;
+			break;
+		case NORMAL_A:
+		case NORMAL_B:
+			ticks++;
+			break;
+		case HI:
+			ticks = 1 + is5in6;
+			break;
+		case MAX:
+			ticks = 2 + is1in2;
+			break;
+		case ZERO:
+		default:
+			break;
+	}
 
   // The first event will always be a START
   crank_mask_e mask = START;
-  while (applied_diff > 0) {
+  while (ticks > 0) {
     // If this is the last diff to apply, include END in the mask (maybe
     // combining with START if there is only 1 tick to process)
-    if (applied_diff == 1) {
+    if (ticks == 1) {
       mask |= END;
     }
     event_emitter_fire(emitter, ++current_time, mask);
-    applied_diff--;
+    ticks--;
     mask = 0;
   }
 }

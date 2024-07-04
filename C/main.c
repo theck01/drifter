@@ -17,6 +17,7 @@
 #include "C/core/crank-time.h"
 #include "C/core/fps-timers.h"
 #include "C/core/input-generator.h"
+#include "C/core/sprite-animator.h"
 #include "C/core/structure.h"
 #include "C/core/viewport.h"
 #include "C/core/world.h"
@@ -31,11 +32,28 @@ static world* main_world = NULL;
 static vector* ant_vector = NULL;
 static controls* default_controls = NULL;
 static PlaydateAPI* api = NULL;
+gid_t animation_listener_id = INVALID_GID;
+
+void* crank_timers(void* _, va_list args) {
+  int current_time = va_arg(args, int);
+  crank_mask_e crank_mask = (crank_mask_e)va_arg(args, int);
+  // == specifically to mean that it is not START | END;
+  if (crank_mask == START) {
+    sprite_animator_global_pause();
+  }
+
+  fps_timers_update();
+
+  // == specifically to mean that it is not START | END;
+  if (crank_mask == END) {
+    sprite_animator_global_resume();
+  }
+  return NULL;
+}
 
 int update_loop(void* _) {
   input_generator_flush(default_controls);
   crank_time_update();
-  fps_timers_update();
   api->sprite->updateAndDrawSprites();
   api->system->drawFPS(0, 0);
   return 1;
@@ -75,6 +93,8 @@ int eventHandler(
     map_grid_show();
     viewport_connect(default_controls);
     viewport_set_offset(400, 0);
+
+    crank_time_advance_listener(closure_create(NULL, crank_timers));
 
     // Redraw all sprites on every frame and avoid dirty rect tracking.
     // The number of sprites planned to be moving around screen causes the
