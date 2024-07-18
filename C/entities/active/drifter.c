@@ -67,8 +67,6 @@ void drifter_model_copy(void * dest, void* source) {
 static LCDBitmapTable* drifter_animations[] = {
   NULL,
   NULL,
-  NULL,
-  NULL
 };
 
 typedef struct drifter_animation_description_struct {
@@ -76,12 +74,10 @@ typedef struct drifter_animation_description_struct {
   action_e action;
 } drifter_animation_description;
 static drifter_animation_description animation_description[] = {
-  { .name = "img/drifter/tiny-idle.gif", .action = IDLE },
-  { .name = "img/drifter/tiny-walk.gif", .action = WALK },
-  { .name = "img/drifter/idle.gif", .action = MEDIUM },
-  { .name = "img/drifter/large.gif", .action = LARGE }
+  { .name = "img/drifter/idle.gif", .action = IDLE },
+  { .name = "img/drifter/walk.gif", .action = WALK },
 };
-static const uint8_t animation_count = 4;
+static const uint8_t animation_count = 2;
 static bool drifter_animations_loaded = false;
 
 static void load_animations_if_needed(void) {
@@ -194,7 +190,7 @@ void* drifter_despawn(void* self, va_list args) {
   return NULL;
 }
 
-drifter* drifter_create(world* w, controls* c, point* p, int cheat) {
+drifter* drifter_create(world* w, controls* c, point* p) {
   load_animations_if_needed();
   PlaydateAPI* api = get_api();
   drifter* a = malloc(sizeof(drifter));
@@ -203,7 +199,7 @@ drifter* drifter_create(world* w, controls* c, point* p, int cheat) {
   }
 
   drifter_model initial_extended = {
-    .action = cheat,
+    .action = IDLE
   };
   int_rect bounds = { 
     .x = p->x, 

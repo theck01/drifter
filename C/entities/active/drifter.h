@@ -10,8 +10,7 @@ typedef struct drifter_struct drifter;
 drifter* drifter_create(
   world* w, 
   controls* c,
-  point* position,
-  int cheat
+  point* position
 );
 
 void drifter_destroy(drifter* d);

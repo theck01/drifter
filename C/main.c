@@ -80,12 +80,8 @@ int eventHandler(
 
     main_world = world_create(30, 18);
     default_controls = create_controls();
-    point p = { .x = 500, .y = 120 };
-    player = drifter_create(main_world, default_controls, &p, 0);
-    p.x = 600;
-    drifter_create(main_world, default_controls, &p, 2);
-    p.x = 700;
-    drifter_create(main_world, default_controls, &p, 3);
+    point p = { .x = 600, .y = 120 };
+    player = drifter_create(main_world, default_controls, &p);
 
     map_grid_show();
 
