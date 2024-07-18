@@ -22,17 +22,16 @@
 #include "C/core/structure.h"
 #include "C/core/viewport.h"
 #include "C/core/world.h"
-#include "C/entities/active/ant.h"
+#include "C/entities/active/drifter.h"
 #include "C/ui/map-grid.h"
 #include "C/utils/random.h"
 #include "C/utils/vector.h"
 
-const int ANT_COUNT = 200;
+static PlaydateAPI* api = NULL;
 
 static world* main_world = NULL;
-static vector* ant_vector = NULL;
 static controls* default_controls = NULL;
-static PlaydateAPI* api = NULL;
+static drifter* player = NULL;
 gid_t animation_listener_id = INVALID_GID;
 
 void* game_speed_animate(void* _, va_list args) {
@@ -80,19 +79,16 @@ int eventHandler(
     input_generator_listen();
 
     main_world = world_create(30, 18);
-
-    ant_vector = vector_create(ANT_COUNT);
-    for (uint8_t i=0; i<ANT_COUNT; i++) {
-      ant* a = ant_create(
-        main_world, 
-        random_uint(420, 780), 
-        random_uint(20, 220)
-      );
-      vector_push(ant_vector, a);
-    }
-
     default_controls = create_controls();
+    point p = { .x = 500, .y = 120 };
+    player = drifter_create(main_world, default_controls, &p, 0);
+    p.x = 600;
+    drifter_create(main_world, default_controls, &p, 2);
+    p.x = 700;
+    drifter_create(main_world, default_controls, &p, 3);
+
     map_grid_show();
+
     viewport_connect(default_controls);
     viewport_set_offset(400, 0);
 

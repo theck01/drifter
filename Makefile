@@ -1,7 +1,7 @@
 HEAP_SIZE      = 8388208
 STACK_SIZE     = 61800
 
-PRODUCT = Colony.pdx
+PRODUCT = drifter.pdx
 C_DIR = C/
 C_SOURCE_FILES = $(shell find $(C_DIR) -name '*.c')
 
