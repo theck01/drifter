@@ -5,7 +5,6 @@
 #include "C/api.h"
 #include "C/utils/closure.h"
 
-#include "crank.h"
 #include "event-emitter.h"
 
 #include "game-clock.h"

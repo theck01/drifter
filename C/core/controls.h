@@ -36,8 +36,21 @@ void controls_remove_listener_for_button_group(
   button_group_e group 
 );
 
-// Notify controls of new events in a nil-event terminated array
-void controls_handle(controls* c, input_event* events);
+/*
+ * Closures:
+ * listener(crank_event* e): Called when cranking causes a change in tick count
+ */
+gid_t controls_add_crank_listener(controls* c, closure* listener);
+
+void controls_remove_crank_listener(controls* c, gid_t listener_id);
+
+// Notify controls of new button events in a nil-event terminated array, and of
+// change in crank position if a significant enough deviation occured.
+void controls_handle(
+  controls* c, 
+  input_event* button_events, 
+  crank_event* cranked
+);
 
 void destroy_controls(controls* c);
 

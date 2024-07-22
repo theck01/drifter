@@ -35,4 +35,9 @@ input_button_e input_event_button(input_event e);
 
 bool input_button_is_dpad(input_button_e btn);
 
+typedef struct crank_event_struct {
+  int tick;
+  int diff;
+} crank_event;
+
 #endif

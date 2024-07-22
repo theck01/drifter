@@ -34,10 +34,19 @@ typedef struct drifter_model_struct {
   action_e action;
 } drifter_model;
 
+typedef struct drifter_listeners_struct {
+  controls* owner;
+  gid_t dpad;
+  gid_t a_btn;
+  gid_t b_btn;
+  gid_t crank;
+} drifter_listeners;
+
 struct drifter_struct {
   entity* self;
   LCDSprite* sprite;
   sprite_animator* animator;
+  drifter_listeners listeners;
 };
 
 
@@ -190,11 +199,33 @@ void* drifter_despawn(void* self, va_list args) {
   return NULL;
 }
 
+void* drifter_button_press(void* self, va_list args) {
+  PlaydateAPI* api = get_api();
+  input_event* button_events = va_arg(args, input_event*);
+  int i = 0;
+  while (!input_event_is_nil(button_events[i])) {
+    api->system->logToConsole("Button event: %d", button_events[i]);
+    i++;
+  }
+  return NULL;
+}
+
+void* drifter_crank(void* self, va_list args) {
+  PlaydateAPI* api = get_api();
+  crank_event* ce = va_arg(args, crank_event*);
+  api->system->logToConsole(
+    "Crank event: { tick: %d, diff: %d }", 
+    ce->tick, 
+    ce->diff
+  );
+  return NULL;
+}
+
 drifter* drifter_create(world* w, controls* c, point* p) {
   load_animations_if_needed();
   PlaydateAPI* api = get_api();
-  drifter* a = malloc(sizeof(drifter));
-  if (!a) {
+  drifter* d = malloc(sizeof(drifter));
+  if (!d) {
     get_api()->system->error("Could not allocate memory for drifter");
   }
 
@@ -208,13 +239,13 @@ drifter* drifter_create(world* w, controls* c, point* p) {
     .height = DRIFTER_HEIGHT_PX 
   };
   entity_behavior behavior = {
-    .spawn = closure_create(a, drifter_spawn),
-    .show = closure_create(a, drifter_show),
-    .apply = closure_create(a, drifter_apply),
-    .despawn = closure_create(a, drifter_despawn),
-    .plan = closure_create(a, drifter_plan)
+    .spawn = closure_create(d, drifter_spawn),
+    .show = closure_create(d, drifter_show),
+    .apply = closure_create(d, drifter_apply),
+    .despawn = closure_create(d, drifter_despawn),
+    .plan = closure_create(d, drifter_plan)
   };
-  a->self = entity_create(
+  d->self = entity_create(
     DRIFTER_LABEL,
     &bounds,
     &initial_extended,
@@ -224,19 +255,55 @@ drifter* drifter_create(world* w, controls* c, point* p) {
     drifter_model_copy
   );
 
-  a->sprite = NULL;
-  a->animator = NULL;
+  d->sprite = NULL;
+  d->animator = NULL;
 
-  world_add_entity(w, a->self);
+  world_add_entity(w, d->self);
 
-  return a;
+
+  closure* btn_listener = closure_create(d, drifter_button_press);
+  // Retain btn closure twice, so that it can withstand being destroyed by 3 
+  // removals needed to fully disconnect the listener from all events
+  closure_retain(btn_listener);
+  closure_retain(btn_listener);
+
+  d->listeners.owner = c;
+  d->listeners.dpad = 
+    controls_add_listener_for_button_group(c, btn_listener, DPAD);
+  d->listeners.a_btn = 
+    controls_add_listener_for_button_group(c, btn_listener, A_BTN);
+  d->listeners.b_btn = 
+    controls_add_listener_for_button_group(c, btn_listener, B_BTN);
+
+  d->listeners.crank = 
+    controls_add_crank_listener(c, closure_create(d, drifter_crank));
+
+  return d;
 }
 
-void drifter_destroy(drifter* a) {
+void drifter_destroy(drifter* d) {
   PlaydateAPI* api = get_api();
-  entity_destroy(a->self);  
-  sprite_animator_destroy(a->animator);
-  api->sprite->removeSprite(a->sprite);
-  api->sprite->freeSprite(a->sprite);
-  free(a);
+  entity_destroy(d->self);  
+  sprite_animator_destroy(d->animator);
+  api->sprite->removeSprite(d->sprite);
+  api->sprite->freeSprite(d->sprite);
+
+  controls_remove_listener_for_button_group(
+    d->listeners.owner, 
+    d->listeners.dpad,
+    DPAD
+  );
+  controls_remove_listener_for_button_group(
+    d->listeners.owner, 
+    d->listeners.a_btn,
+    A_BTN
+  );
+  controls_remove_listener_for_button_group(
+    d->listeners.owner, 
+    d->listeners.b_btn,
+    B_BTN
+  );
+  controls_remove_crank_listener(d->listeners.owner, d->listeners.crank);
+
+  free(d);
 }

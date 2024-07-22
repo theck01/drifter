@@ -14,7 +14,6 @@
 
 #include "C/api.h"
 #include "C/core/controls.h"
-#include "C/core/crank.h"
 #include "C/core/game-clock.h"
 #include "C/core/fps-timers.h"
 #include "C/core/input-generator.h"
@@ -53,7 +52,6 @@ void* game_speed_animate(void* _, va_list args) {
 
 int update_loop(void* _) {
   input_generator_flush(default_controls);
-  crank_check();
   game_clock_update();
   api->sprite->updateAndDrawSprites();
   api->system->drawFPS(0, 0);

@@ -10,6 +10,7 @@
 
 #include "input-generator.h"
 
+// Button state
 PDButtons buttons_on_last_flush = 0;
 typedef struct raw_event_struct {
   PDButtons btn;
@@ -17,6 +18,10 @@ typedef struct raw_event_struct {
 } raw_event;
 static raw_event input_queue[8 /* INPUT_QUEUE_SIZE */];
 static uint8_t queue_size = 0; 
+
+// Crank state
+static const float degrees_per_tick = 360.0f / CRANK_TICKS_PER_REVOLUTION;
+static int8_t last_tick = -1;
 
 typedef struct button_conversion_struct {
   PDButtons pd;
@@ -47,7 +52,6 @@ int button_callback(
   queue_size++;
   return 0;
 }
-
 
 void input_generator_listen(void) {
   get_api()->system->setButtonCallback(button_callback, NULL, INPUT_QUEUE_SIZE);
@@ -103,6 +107,36 @@ bool events_for_button_pair(
   return event_count > 0;
 }
 
+void crank_check(crank_event* e) {
+  float current_angle = get_api()->system->getCrankAngle();
+  float last_tick_angle = degrees_per_tick * last_tick;
+
+  // Check special case if crank passed 0* boundary, assumes user cannot
+  // crank at 1/2 rotation per frame, and that there are plenty of ticks per
+  // revolution (~5+).
+  bool wrapped_zero_boundary = fabsf(current_angle - last_tick_angle) > 180;
+  bool angle_increasing = wrapped_zero_boundary ?
+    current_angle < 180 :
+    current_angle > last_tick_angle;
+
+  uint8_t raw_tick = angle_increasing ?
+    floorf(current_angle / degrees_per_tick) :
+    ceilf(current_angle/degrees_per_tick);
+  uint8_t current_tick = raw_tick == CRANK_TICKS_PER_REVOLUTION ? 0 : raw_tick;
+
+  int8_t tick_correction = 0;
+  if (angle_increasing && (current_tick < last_tick)) {
+    tick_correction = CRANK_TICKS_PER_REVOLUTION;
+  } else if (!angle_increasing && (current_tick > last_tick)) {
+    tick_correction = -CRANK_TICKS_PER_REVOLUTION;
+  }
+  int8_t tick_diff = current_tick - last_tick + tick_correction;
+  last_tick = current_tick;
+
+  e->tick = current_tick;
+  e->diff = tick_diff;
+}
+
 void input_generator_flush(controls* c) {
   PDButtons next_state = buttons_on_last_flush;
   for (int i = 0; i < queue_size; i++) {
@@ -113,7 +147,7 @@ void input_generator_flush(controls* c) {
 
   int event_count = 0;
   // +BUTTON_COUNT for HELD buttons that have no new raw events
-  input_event all_events[INPUT_QUEUE_SIZE + BUTTON_COUNT];
+  input_event all_input_events[INPUT_QUEUE_SIZE + BUTTON_COUNT];
   input_event button_events[INPUT_QUEUE_SIZE];
 
   for (int i = 0; i < BUTTON_COUNT; i++) {
@@ -122,16 +156,24 @@ void input_generator_flush(controls* c) {
     ) {
       int j = 0;
       while (!input_event_is_nil(button_events[j])) {
-        all_events[event_count++] = button_events[j++];
+        all_input_events[event_count++] = button_events[j++];
         if (event_count > INPUT_QUEUE_SIZE + BUTTON_COUNT) {
           get_api()->system->error("Input generator event overflow");
         }
       }
     }
   }
-  all_events[event_count] = create_nil_event();
-  if (event_count > 0) {
-    controls_handle(c, all_events);
+  all_input_events[event_count] = create_nil_event();
+
+  crank_event ce;
+  crank_check(&ce);
+
+  if (event_count > 0 || ce.diff) {
+    controls_handle(
+      c, 
+      event_count > 0 ? all_input_events : NULL, 
+      ce.diff ? &ce : NULL
+    );
   }
 
   queue_size = 0;
