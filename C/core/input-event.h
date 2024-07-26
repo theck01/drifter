@@ -7,6 +7,8 @@
 
 #include "pd_api.h"
 
+#include "C/utils/types.h"
+
 typedef enum {
   PRESS = 1<<0,
   HELD = 1<<1,
@@ -14,10 +16,12 @@ typedef enum {
   TAP = 1<<3,
 } input_action_e;
 
+// 0bABLURD: The LURD is important, dpad consumers can rely on that order
+// to simplify their direction calculation.
 typedef enum {
-  D_UP = 1<<4,
+  D_UP = 1<<6,
   D_RIGHT = 1<<5,
-  D_DOWN = 1<<6,
+  D_DOWN = 1<<4,
   D_LEFT = 1<<7,
   A = 1<<8,
   B = 1<<9
@@ -34,6 +38,8 @@ input_action_e input_event_action(input_event e);
 input_button_e input_event_button(input_event e);
 
 bool input_button_is_dpad(input_button_e btn);
+
+direction_e input_button_to_direction(input_button_e btn);
 
 typedef struct crank_event_struct {
   int tick;

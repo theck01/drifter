@@ -83,7 +83,7 @@ int eventHandler(
 
     map_grid_show();
 
-    viewport_connect(default_controls);
+    // viewport_connect(default_controls);
     viewport_set_offset(400, 0);
 
     game_clock_add_listener(closure_create(NULL, game_speed_animate));

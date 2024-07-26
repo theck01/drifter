@@ -75,6 +75,8 @@ void entity_get_bounds(entity* e, int_rect* b);
 
 void entity_move_to(entity* e, point p);
 
+void* entity_get_model(entity* e);
+
 void entity_destroy(entity* e);
 
 #endif

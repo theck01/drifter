@@ -21,4 +21,8 @@ static const uint16_t MAP_GRID_Z_INDEX = 10;
 static const uint16_t ACTOR_Z_INDEX = 50;
 static const uint16_t HUD_Z_INDEX = 100;
 
+// 1/sqrt(2), used to make sure diagonal movement is as fast as straight line
+// movement
+static const float DIAGONAL_MOVE_FRACTION = 0.70710678118f;
+
 #endif

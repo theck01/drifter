@@ -26,6 +26,10 @@ input_button_e input_event_button(input_event e) {
   return (input_button_e)(e & button_mask);
 }
 
+direction_e input_button_to_direction(input_button_e e) {
+  return (direction_e)((e >> 4) & 0xF);
+}
+
 bool input_button_is_dpad(input_button_e btn) {
-  return btn >= D_UP && btn <= D_LEFT;
+  return btn >= D_DOWN && btn <= D_LEFT;
 }

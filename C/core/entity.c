@@ -30,26 +30,37 @@ struct entity_struct {
   gid_t game_clock_id;
 
   // Used to reduce calls to memcpy and behavior.apply
-  void* model_beofre;
-  int_rect bounds_beofre;
+  void* last_model_applied;
+  int_rect last_bounds_applied;
   bool was_shown;
   bool is_game_advancing;
 };
 
-static void* entity_crank_advance(void* context, va_list args) {
+void entity_apply_changes(entity* e) {
+  if (e->shown) {
+    bool did_move = 
+        !e->was_shown || 
+        e->bounds.x != e->last_bounds_applied.x ||
+        e->bounds.y != e->last_bounds_applied.y;
+    closure_call(
+      e->behavior.apply, 
+      e->model, 
+      e->was_shown ? e->last_model_applied : NULL,
+      did_move ? 1 : 0
+    );
+
+    e->model_copy(e->last_model_applied, e->model);
+    memcpy(&(e->last_bounds_applied), &(e->bounds), sizeof(int_rect));
+  }
+  e->was_shown = e->shown;
+}
+
+static void* entity_time_advance(void* context, va_list args) {
   entity* e = (entity*)context;
   int current_time = va_arg(args, int);
   clock_mask_e clock_mask = (clock_mask_e)va_arg(args, int);
   if (clock_mask & START) {
     e->is_game_advancing = true;
-    e->was_shown=e->shown;
-    // Only do a moderately expensive model copy if the entity is shown,
-    // Hidden entites initialize secondary effects at the end of crankiing, with
-    // NULL prior state
-    if (e->shown) {
-      memcpy(&(e->bounds_beofre), &(e->bounds), sizeof(int_rect));
-      e->model_copy(e->model_beofre, e->model);
-    }
   }
 
   if (e->behavior.plan) {
@@ -63,18 +74,7 @@ static void* entity_crank_advance(void* context, va_list args) {
   // ticks have passed, because only the final application will be rendered
   // to the screen and earlier applications are a waste.
   if (clock_mask & END) {
-    if (e->shown) {
-      bool did_move = 
-          !e->was_shown || 
-          e->bounds.x != e->bounds_beofre.x ||
-          e->bounds.y != e->bounds_beofre.y;
-      closure_call(
-        e->behavior.apply, 
-        e->model, 
-        e->was_shown ? e->model_beofre : NULL,
-        did_move ? 1 : 0
-      );
-    }
+    entity_apply_changes(e);
     e->is_game_advancing = false;
   }
   return NULL;
@@ -111,7 +111,7 @@ entity* entity_create(
 
   // crank update will copy the state into beofre when the beofre is
   // needed, so initializing the remainder can be skipped.
-  e->model_beofre = model_allocator();
+  e->last_model_applied = model_allocator();
 
   memcpy(&(e->behavior), behavior, sizeof(entity_behavior));
   e->game_clock_id = INVALID_GID;
@@ -139,10 +139,10 @@ void entity_show(entity* e, bool show) {
   }
   e->shown = show;
   closure_call(e->behavior.show, show ? 1 : 0);
-  // If showing, reapply the entire current state. Skip if actively cranking,
-  // apply will be called once at the end of the crank processing.
+  // If showing, reapply the entire current state. Skip if actively advancing,
+  // apply will be called once at the end of the advancement.
   if (show && !e->is_game_advancing) {
-    closure_call(e->behavior.apply, e->model, NULL, 1 /* did_move */);
+    entity_apply_changes(e);
   }
 }
 
@@ -157,6 +157,10 @@ void entity_get_grid_pos(entity* e, grid_pos* gp) {
 
 void entity_get_bounds(entity* e, int_rect* b) {
   memcpy(b, &(e->bounds), sizeof(int_rect));
+}
+
+void* entity_get_model(entity* e) {
+  return e->model;
 }
 
 void entity_move_to(entity* e, point p) {
@@ -186,7 +190,7 @@ void entity_destroy(entity* e) {
   e->behavior.plan = NULL;
 
   e->model_destroy(e->model);
-  e->model_destroy(e->model_beofre);
+  e->model_destroy(e->last_model_applied);
   e->model_destroy = NULL;
   e->model_copy = NULL;
 }
@@ -203,7 +207,7 @@ void entity_set_world(entity* e, world* w) {
   e->parent_world = w;
   closure_call(e->behavior.spawn, e->model);
   e->game_clock_id = game_clock_add_listener(
-    closure_create(e, entity_crank_advance)
+    closure_create(e, entity_time_advance)
   );
 }
 
