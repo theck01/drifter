@@ -6,6 +6,7 @@
 #include "C/const.h"
 #include "C/macro.h"
 #include "C/core/sprite-animator.h"
+#include "C/core/movement-controller.h"
 #include "C/core/entity.h"
 #include "C/core/sensor.h"
 #include "C/utils/closure.h"
@@ -33,13 +34,12 @@ typedef enum {
 typedef struct drifter_model_struct {
   action_e action;
   direction_e direction;
-  int speed;
-  bool actively_moving;
 } drifter_model;
+
+// move closure to replace speed + actively moving model
 
 typedef struct drifter_listeners_struct {
   controls* owner;
-  gid_t dpad;
   gid_t a_btn;
   gid_t b_btn;
   gid_t crank;
@@ -48,6 +48,7 @@ typedef struct drifter_listeners_struct {
 struct drifter_struct {
   entity* self;
   LCDSprite* sprite;
+  movement_controller* mc;
   sprite_animator* animator;
   drifter_listeners listeners;
 };
@@ -114,61 +115,33 @@ static void load_animations_if_needed(void) {
 
 // DRIFTER LOGIC
 
+void* drifter_move(void* self, va_list args) {
+  drifter* d = (drifter*)self;
+  drifter_model* model = (drifter_model*)entity_get_model(d->self);
+  int dx = va_arg(args, int);
+  int dy = va_arg(args, int);
+
+  model->direction = movement_controller_get_direction(d->mc);
+
+  // If movement has completed, signified with a (0,0) difference, then
+  // change the drifters action to IDLE
+  if (dx == 0 && dy == 0) {
+    model->action = IDLE;
+  } else {
+    model->action = WALK;
+    point p;
+    entity_get_position(d->self, &p);
+    p.x += dx;
+    p.y += dy;
+    entity_move_to(d->self, p);
+  }
+
+  return NULL;
+}
+
 void* drifter_plan(void* self, va_list args) {
   drifter* d = (drifter*)self;
-  drifter_model* model = va_arg(args, drifter_model*);
-  sensor* viewpoint = va_arg(args, sensor*);
-
-  // Update drifters speed based on recent directional inputs
-  if (model->actively_moving) {
-    model->action = WALK;
-    if (model->speed < MAX_SPEED_PX) {
-      model->speed = min(model->speed + SPEED_INCREMENT_PX, MAX_SPEED_PX);
-    }
-  } else {
-    if (model->speed > 0) {
-      model->speed = max(model->speed - SPEED_INCREMENT_PX, 0);
-    } 
-    if (model->speed == 0) {
-      model->action = IDLE;
-    }
-  }
-
-  // Update drifters position based on speed
-  if (model->speed > 0) {
-    if (model->direction == NONE) {
-      get_api()->system->error(
-        "Drifter has %d speed but no direction", 
-        model->speed
-      );
-    }
-
-    point offset = { .x = 0, .y = 0 };
-    if (model->direction & U) {
-      offset.y = -1;
-    }
-    if (model->direction & D) {
-      offset.y = 1;
-    }
-    if (model->direction & L) {
-      offset.x = -1;
-    }
-    if (model->direction & R) {
-      offset.x = 1;
-    }
-
-    float move_fraction = offset.x && offset.y ? DIAGONAL_MOVE_FRACTION : 1.f;
-    offset.x = offset.x * roundf(move_fraction * model->speed);
-    offset.y = offset.y * roundf(move_fraction * model->speed);
-
-    point position, actual;
-    entity_get_position(d->self, &position);
-    position.x += offset.x;
-    position.y += offset.y;
-    if(sensor_can_entity_move(viewpoint, d->self, position, &actual)) {
-      entity_move_to(d->self, position);
-    }
-  }
+  movement_controller_step(d->mc);
   return NULL;
 }
 
@@ -262,36 +235,6 @@ void* drifter_button_press(void* self, va_list args) {
   return NULL;
 }
 
-void* drifter_dpad_press(void* self, va_list args) {
-  PlaydateAPI* api = get_api();
-
-  drifter* d = (drifter*) self;
-  drifter_model* dm = entity_get_model(d->self);
-  input_event* dpad_events = va_arg(args, input_event*);
-
-  direction_e active_direction = NONE;
-  int i = 0;
-  while (!input_event_is_nil(dpad_events[i])) {
-    input_button_e btn = input_event_button(dpad_events[i]);
-    direction_e btn_direction = input_button_to_direction(btn);
-    input_action_e action = input_event_action(dpad_events[i]);
-    if (action == HELD || action == PRESS) {
-      active_direction |= btn_direction;
-    }
-    i++;
-  }
-
-  if (active_direction != NONE) {
-    dm->direction = active_direction;
-    dm->action = WALK;
-    dm->actively_moving = true;
-  } else {
-    dm->actively_moving = false;
-  }
-
-  return NULL;
-}
-
 void* drifter_crank(void* self, va_list args) {
   PlaydateAPI* api = get_api();
   crank_event* ce = va_arg(args, crank_event*);
@@ -314,8 +257,6 @@ drifter* drifter_create(world* w, controls* c, point* p) {
   drifter_model initial_extended = {
     .action = IDLE,
     .direction = NONE,
-    .speed = 0,
-    .actively_moving = false
   };
   int_rect bounds = { 
     .x = p->x, 
@@ -340,6 +281,17 @@ drifter* drifter_create(world* w, controls* c, point* p) {
     drifter_model_copy
   );
 
+  movement_config config = {
+    .max_speed_px = 5,
+    .speed_increment_px = 1,
+    .speed_decrement_px = 2,
+  };
+  d->mc = movement_controller_create(
+    &config,
+    closure_create(d, drifter_move),
+    c
+  );
+
   d->sprite = NULL;
   d->animator = NULL;
 
@@ -356,12 +308,6 @@ drifter* drifter_create(world* w, controls* c, point* p) {
     controls_add_listener_for_button_group(c, btn_listener, A_BTN);
   d->listeners.b_btn = 
     controls_add_listener_for_button_group(c, btn_listener, B_BTN);
-
-  d->listeners.dpad = controls_add_listener_for_button_group(
-    c, 
-    closure_create(d, drifter_dpad_press), 
-    DPAD
-  );
   d->listeners.crank = 
     controls_add_crank_listener(c, closure_create(d, drifter_crank));
 
@@ -371,15 +317,11 @@ drifter* drifter_create(world* w, controls* c, point* p) {
 void drifter_destroy(drifter* d) {
   PlaydateAPI* api = get_api();
   entity_destroy(d->self);  
+  movement_controller_destroy(d->mc);
   sprite_animator_destroy(d->animator);
   api->sprite->removeSprite(d->sprite);
   api->sprite->freeSprite(d->sprite);
 
-  controls_remove_listener_for_button_group(
-    d->listeners.owner, 
-    d->listeners.dpad,
-    DPAD
-  );
   controls_remove_listener_for_button_group(
     d->listeners.owner, 
     d->listeners.a_btn,

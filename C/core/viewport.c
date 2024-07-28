@@ -91,13 +91,6 @@ void* dpad_handler(void* context, va_list args) {
       );
       applied_hold_bonus = true;
     } 
-
-    if (action == PRESS) {
-      sprite_animator_global_pause();
-    }
-    if (action == RELEASE) {
-      sprite_animator_global_resume();
-    }
   }
 
   viewport_set_offset(

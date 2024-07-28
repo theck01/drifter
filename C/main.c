@@ -87,13 +87,6 @@ int eventHandler(
     viewport_set_offset(400, 0);
 
     game_clock_add_listener(closure_create(NULL, game_speed_animate));
-
-    // Redraw all sprites on every frame and avoid dirty rect tracking.
-    // The number of sprites planned to be moving around screen causes the
-    // performance dirty rects to drop significantly while drawing on every
-    // frame remains performant (especially with other methods of reducing
-    // draw counts)
-    api->sprite->setAlwaysRedraw(1);
   } 
   return 0;
 }
