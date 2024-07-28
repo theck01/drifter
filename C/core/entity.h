@@ -7,12 +7,12 @@
 #include "C/utils/geometry.h"
 #include "C/utils/types.h"
 
-typedef struct entity_struct entity;
+#include "types.h"
 
 typedef struct entity_behavior_struct {
   /*
-   * spawn(void* extended_model): Generate any sprites/sounds
-   * associated with the entity. Called on addition to the world.
+   * spawn(void): Generate any sprites/sounds associated with the entity.
+   * Called on addition to the world.
    */
   closure* spawn;
   /*
@@ -40,12 +40,7 @@ typedef struct entity_behavior_struct {
    */
   closure* despawn;
   /*
-   * plan(
-   *   entity_model* model_to_update, 
-   *   sensor* viewpoint
-   * ): Update the argument model to advance one time unit. Both models are set
-   *   to same state at beginning model_to_update is the only one that should be
-   *   modified.
+   * plan(void) Update the entity to advance one time unit.
    */
   closure* plan;
 } entity_behavior;
@@ -72,6 +67,8 @@ char* entity_get_label(entity* e);
 void entity_get_position(entity* e, point* p);
 void entity_get_grid_pos(entity* e, grid_pos* gp);
 void entity_get_bounds(entity* e, int_rect* b);
+
+sensor* entity_get_sensor(entity* e);
 
 void entity_move_to(entity* e, point p);
 

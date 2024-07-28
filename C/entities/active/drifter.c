@@ -129,11 +129,15 @@ void* drifter_move(void* self, va_list args) {
     model->action = IDLE;
   } else {
     model->action = WALK;
-    point p;
+
+    sensor* s = entity_get_sensor(d->self);
+    point p, actual;
     entity_get_position(d->self, &p);
     p.x += dx;
     p.y += dy;
-    entity_move_to(d->self, p);
+    if (sensor_can_entity_move(s, d->self, p, &actual)) {
+      entity_move_to(d->self, p);
+    }
   }
 
   return NULL;
@@ -169,57 +173,56 @@ void* drifter_apply(void* self, va_list args) {
 
 void* drifter_show(void* self, va_list args) {
   PlaydateAPI* api = get_api();
-  drifter* a = (drifter*)self;
+  drifter* d = (drifter*)self;
   int show = (bool)va_arg(args, int);
-  api->sprite->setVisible(a->sprite, show);
+  api->sprite->setVisible(d->sprite, show);
   if (show) {
-    sprite_animator_resume(a->animator);
+    sprite_animator_resume(d->animator);
   } else {
-    sprite_animator_pause(a->animator);
+    sprite_animator_pause(d->animator);
   }
   return NULL;
 }
 
 void* drifter_spawn(void* self, va_list args) {
   PlaydateAPI* api = get_api();
-  drifter* a = (drifter*)self;
-  if (a->sprite) {
+  drifter* d = (drifter*)self;
+  if (d->sprite) {
     api->system->error("Cannot spawn drifter that already has spawned");
   }
 
-  drifter_model* model = va_arg(args, drifter_model*);
-
   point p;
-  entity_get_position(a->self, &p);
+  entity_get_position(d->self, &p);
 
-  a->sprite = create_draw_only_sprite();
-  api->sprite->moveTo(a->sprite, p.x, p.y);
-  api->sprite->setZIndex(a->sprite, ACTOR_Z_INDEX);
-  api->sprite->addSprite(a->sprite);
-  api->sprite->setVisible(a->sprite, false);
+  d->sprite = create_draw_only_sprite();
+  api->sprite->moveTo(d->sprite, p.x, p.y);
+  api->sprite->setZIndex(d->sprite, ACTOR_Z_INDEX);
+  api->sprite->addSprite(d->sprite);
+  api->sprite->setVisible(d->sprite, false);
 
-  a->animator = sprite_animator_create(
-    a->sprite,
+  drifter_model* model = (drifter_model*)entity_get_model(d->self);
+  d->animator = sprite_animator_create(
+    d->sprite,
     drifter_animations[model->action],
     12 /* fps */, 
     0 /* starting_frame */
   );
-  sprite_animator_start(a->animator);
+  sprite_animator_start(d->animator);
   
   return NULL;
 }
 
 void* drifter_despawn(void* self, va_list args) {
   PlaydateAPI* api = get_api();
-  drifter* a = (drifter*)self;
-  if (!a->sprite) {
+  drifter* d = (drifter*)self;
+  if (!d->sprite) {
     api->system->error("Cannot despawn drifter that is already despawned");
   }
 
-  api->sprite->freeSprite(a->sprite);
-  a->sprite = NULL;
-  sprite_animator_destroy(a->animator);
-  a->animator = NULL;
+  api->sprite->freeSprite(d->sprite);
+  d->sprite = NULL;
+  sprite_animator_destroy(d->animator);
+  d->animator = NULL;
 
   return NULL;
 }

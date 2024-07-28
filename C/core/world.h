@@ -4,9 +4,7 @@
 
 #include "C/utils/geometry.h"
 
-#include "entity.h"
-
-typedef struct world_struct world;
+#include "types.h"
 
 world* world_create(int tiles_wide, int tiles_tall);
 

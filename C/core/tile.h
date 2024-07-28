@@ -4,9 +4,7 @@
 
 #include <stdbool.h>
 
-#include "entity.h"
-
-typedef struct tile_struct tile;
+#include "types.h"
 
 typedef struct tile_metadata_struct {
   grid_pos origin;

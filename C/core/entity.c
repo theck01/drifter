@@ -64,10 +64,7 @@ static void* entity_time_advance(void* context, va_list args) {
   }
 
   if (e->behavior.plan) {
-    // Assume the tile exists, because the entity was allowed to exist in the
-    // current position.
-    tile* t = world_get_tile(e->parent_world, e->world_pos);
-    closure_call(e->behavior.plan, e->model, t->sensor);
+    closure_call(e->behavior.plan);
   }
 
   // Model changes need to be applied only once, even if multiple crank
@@ -159,6 +156,11 @@ void entity_get_bounds(entity* e, int_rect* b) {
   memcpy(b, &(e->bounds), sizeof(int_rect));
 }
 
+sensor* entity_get_sensor(entity* e) {
+  tile* t = world_get_tile(e->parent_world, e->world_pos);
+  return t->sensor;
+}
+
 void* entity_get_model(entity* e) {
   return e->model;
 }
@@ -205,7 +207,7 @@ void entity_set_world(entity* e, world* w) {
   }
 
   e->parent_world = w;
-  closure_call(e->behavior.spawn, e->model);
+  closure_call(e->behavior.spawn);
   e->game_clock_id = game_clock_add_listener(
     closure_create(e, entity_time_advance)
   );
