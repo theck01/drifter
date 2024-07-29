@@ -8,8 +8,6 @@
 
 #include "sprite-animator.h"
 
-static int global_pause_counter = 0;
-
 struct sprite_animator_struct {
   LCDSprite* sprite;
   LCDBitmapTable* animation;
@@ -51,7 +49,7 @@ sprite_animator* sprite_animator_create(
 
 void* sprite_animator_tick(void* animator, va_list _) {
   sprite_animator* s = (sprite_animator*)animator;
-  if (global_pause_counter || s->paused) {
+  if (s->paused) {
     return NULL;
   }
   s->frame = sprite_animator_show_frame(s, s->frame + 1);
@@ -105,12 +103,4 @@ void sprite_animator_pause(sprite_animator* s) {
 
 void sprite_animator_resume(sprite_animator* s) {
   s->paused = false;
-}
-
-void sprite_animator_global_pause(void) {
-  global_pause_counter++;
-}
-
-void sprite_animator_global_resume(void) {
-  global_pause_counter = max(global_pause_counter - 1, 0);
 }

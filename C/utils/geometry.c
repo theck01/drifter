@@ -10,6 +10,13 @@
 
 #include "geometry.h"
 
+void int_rect_to_lcd(int_rect* ir, LCDRect* lcd) {
+  lcd->left = ir->x;
+  lcd->top = ir->y;
+  lcd->right = ir->x + ir->width;
+  lcd->bottom = ir->y + ir->height;
+}
+
 void grid_pos_for_point(point p, grid_pos* gp) {
   gp->row = p.y / MAP_TILE_SIZE_PX - (p.y < 0 ? 1 : 0); 
   gp->col = p.x / MAP_TILE_SIZE_PX - (p.x < 0 ? 1 : 0); 

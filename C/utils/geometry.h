@@ -20,6 +20,8 @@ typedef struct int_rect_struct {
   unsigned int height;
 } int_rect;
 
+void int_rect_to_lcd(int_rect* ir, LCDRect* lcd);
+
 void grid_pos_for_point(point p, grid_pos* gp);
 
 typedef struct math_vec_struct {

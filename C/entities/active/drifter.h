@@ -13,6 +13,8 @@ drifter* drifter_create(
   point* position
 );
 
+entity* drifter_get_entity(drifter* d);
+
 void drifter_destroy(drifter* d);
 
 #endif

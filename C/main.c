@@ -14,6 +14,7 @@
 
 #include "C/api.h"
 #include "C/core/controls.h"
+#include "C/core/camera.h"
 #include "C/core/game-clock.h"
 #include "C/core/fps-timers.h"
 #include "C/core/input-generator.h"
@@ -30,29 +31,13 @@ static PlaydateAPI* api = NULL;
 
 static world* main_world = NULL;
 static controls* default_controls = NULL;
+static camera* main_camera = NULL;
 static drifter* player = NULL;
-gid_t animation_listener_id = INVALID_GID;
-
-void* game_speed_animate(void* _, va_list args) {
-  int current_time = va_arg(args, int);
-  clock_mask_e clock_mask = (clock_mask_e)va_arg(args, int);
-  // == specifically to mean that it is not START | END;
-  if (clock_mask == START) {
-    sprite_animator_global_pause();
-  }
-
-  fps_timers_update();
-
-  // == specifically to mean that it is not START | END;
-  if (clock_mask == END) {
-    sprite_animator_global_resume();
-  }
-  return NULL;
-}
 
 int update_loop(void* _) {
   input_generator_flush(default_controls);
   game_clock_update();
+  fps_timers_update();
   api->sprite->updateAndDrawSprites();
   api->system->drawFPS(0, 0);
   return 1;
@@ -74,19 +59,26 @@ int eventHandler(
     srand(playdate->system->getSecondsSinceEpoch(NULL));
     playdate->system->resetElapsedTime();
     playdate->system->setUpdateCallback(update_loop, NULL);
+    // Moving animating sprites while scrolling the screen causes severe
+    // framerate issues when attempting to be smart about what sprites
+    // need to be redrawn. Avoid this performance cost by drawing everything
+    // every frame, to skip the occlusion logic.
+    playdate->sprite->setAlwaysRedraw(1);
+
+
     input_generator_listen();
 
     main_world = world_create(30, 18);
     default_controls = create_controls();
+
     point p = { .x = 600, .y = 120 };
     player = drifter_create(main_world, default_controls, &p);
 
+    point camera_origin = { .x = 400, .y = 0 };
+    main_camera = camera_create(main_world, camera_origin);
+    camera_track(main_camera, drifter_get_entity(player));
+
     map_grid_show();
-
-    // viewport_connect(default_controls);
-    viewport_set_offset(400, 0);
-
-    game_clock_add_listener(closure_create(NULL, game_speed_animate));
   } 
   return 0;
 }

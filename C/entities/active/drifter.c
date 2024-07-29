@@ -317,6 +317,11 @@ drifter* drifter_create(world* w, controls* c, point* p) {
   return d;
 }
 
+entity* drifter_get_entity(drifter* d) {
+  return d->self;
+}
+
+
 void drifter_destroy(drifter* d) {
   PlaydateAPI* api = get_api();
   entity_destroy(d->self);  

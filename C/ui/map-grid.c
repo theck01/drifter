@@ -86,10 +86,17 @@ void map_grid_show(void) {
     api->sprite->addSprite(grid);
   }
 
-  api->sprite->setVisible(grid, 1);
+  closure* viewport_moved_listener = 
+    closure_create(NULL /* context */, viewport_moved);
+
+  point offset;
+  viewport_get_offset(&offset);
+  closure_call(viewport_moved_listener, offset.x, offset.y);
   viewport_listener_id = viewport_add_offset_listener(
-    closure_create(NULL /* context */, viewport_moved)
+      viewport_moved_listener
   );
+
+  api->sprite->setVisible(grid, 1);
   shown = true;
 }
 
