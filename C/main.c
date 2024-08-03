@@ -22,7 +22,7 @@
 #include "C/core/structure.h"
 #include "C/core/viewport.h"
 #include "C/core/world.h"
-#include "C/entities/active/drifter.h"
+#include "C/entities/drifter/drifter.h"
 #include "C/ui/map-grid.h"
 #include "C/utils/random.h"
 #include "C/utils/vector.h"

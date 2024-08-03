@@ -5,11 +5,16 @@
 
 #include "controls.h"
 
-struct controls_struct {
+typedef struct control_set_struct {
   event_emitter* dpad;
   event_emitter* a;
   event_emitter* b;
   event_emitter* crank;
+} control_set;
+
+struct controls_struct {
+  control_set normal;
+  control_set realtime;
 };
 
 controls* create_controls(void) {
@@ -18,10 +23,15 @@ controls* create_controls(void) {
     get_api()->system->error("Could not allocate memory for controls");
   }
 
-  c->dpad = event_emitter_create();
-  c->a = event_emitter_create();
-  c->b = event_emitter_create();
-  c->crank = event_emitter_create();
+  c->normal.dpad = event_emitter_create();
+  c->normal.a = event_emitter_create();
+  c->normal.b = event_emitter_create();
+  c->normal.crank = event_emitter_create();
+
+  c->realtime.dpad = event_emitter_create();
+  c->realtime.a = event_emitter_create();
+  c->realtime.b = event_emitter_create();
+  c->realtime.crank = event_emitter_create();
 
   return c;
 }
@@ -33,11 +43,11 @@ gid_t controls_add_listener_for_button_group(
 ) {
   switch(group) {
     case DPAD:
-      return event_emitter_add(c->dpad, listener);
+      return event_emitter_add(c->normal.dpad, listener);
     case A_BTN:
-      return event_emitter_add(c->a, listener);
+      return event_emitter_add(c->normal.a, listener);
     case B_BTN:
-      return event_emitter_add(c->b, listener);
+      return event_emitter_add(c->normal.b, listener);
   }
   return INVALID_GID;
 }
@@ -49,23 +59,57 @@ void controls_remove_listener_for_button_group(
 ) {
   switch(group) {
     case DPAD:
-      event_emitter_remove(c->dpad, listener_id);
+      event_emitter_remove(c->normal.dpad, listener_id);
       break;
     case A_BTN:
-      event_emitter_remove(c->a, listener_id);
+      event_emitter_remove(c->normal.a, listener_id);
       break;
     case B_BTN:
-      event_emitter_remove(c->b, listener_id);
+      event_emitter_remove(c->normal.b, listener_id);
+      break;
+  }
+}
+
+gid_t controls_add_realtime_listener_for_button_group(
+  controls* c, 
+  closure* listener,
+  button_group_e group 
+) {
+  switch(group) {
+    case DPAD:
+      return event_emitter_add(c->realtime.dpad, listener);
+    case A_BTN:
+      return event_emitter_add(c->realtime.a, listener);
+    case B_BTN:
+      return event_emitter_add(c->realtime.b, listener);
+  }
+  return INVALID_GID;
+}
+
+void controls_remove_realtime_listener_for_button_group(
+  controls* c, 
+  gid_t listener_id,
+  button_group_e group 
+) {
+  switch(group) {
+    case DPAD:
+      event_emitter_remove(c->realtime.dpad, listener_id);
+      break;
+    case A_BTN:
+      event_emitter_remove(c->realtime.a, listener_id);
+      break;
+    case B_BTN:
+      event_emitter_remove(c->realtime.b, listener_id);
       break;
   }
 }
 
 gid_t controls_add_crank_listener(controls* c, closure* listener) {
-  return event_emitter_add(c->crank, listener);
+  return event_emitter_add(c->normal.crank, listener);
 }
 
 void controls_remove_crank_listener(controls* c, gid_t listener_id) {
-  event_emitter_remove(c->crank, listener_id);
+  event_emitter_remove(c->normal.crank, listener_id);
 }
 
 
@@ -90,28 +134,39 @@ void controls_handle(controls* c, input_event* btn_events, crank_event* ce) {
       }
       i++;
     }
+
     dpad_events[dpad_count] = create_nil_event();
+    event_emitter_fire(c->realtime.dpad, dpad_events);
     if (dpad_count > 0) {
-      event_emitter_fire(c->dpad, dpad_events);
+      event_emitter_fire(c->normal.dpad, dpad_events);
     }
+
     a_events[a_count] = create_nil_event();
+    event_emitter_fire(c->realtime.a, a_events);
     if (a_count > 0) {
-      event_emitter_fire(c->a, a_events);
+      event_emitter_fire(c->normal.a, a_events);
     }
+
     b_events[b_count] = create_nil_event();
+    event_emitter_fire(c->realtime.b, b_events);
     if (b_count > 0) {
-      event_emitter_fire(c->b, b_events);
+      event_emitter_fire(c->normal.b, b_events);
     }
   }
 
   if (ce) {
-    event_emitter_fire(c->crank, ce);
+    event_emitter_fire(c->normal.crank, ce);
   }
 }
 
 void destroy_controls(controls* c) {
-  event_emitter_destroy(c->dpad);
-  event_emitter_destroy(c->a);
-  event_emitter_destroy(c->b);
+  event_emitter_destroy(c->normal.dpad);
+  event_emitter_destroy(c->normal.a);
+  event_emitter_destroy(c->normal.b);
+  event_emitter_destroy(c->normal.crank);
+  event_emitter_destroy(c->realtime.dpad);
+  event_emitter_destroy(c->realtime.a);
+  event_emitter_destroy(c->realtime.b);
+  event_emitter_destroy(c->realtime.crank);
   free(c);
 }

@@ -36,6 +36,19 @@ void controls_remove_listener_for_button_group(
   button_group_e group 
 );
 
+// Same as the regular listener, but will be called on every frame the controls
+// are active even if there are no events
+gid_t controls_add_realtime_listener_for_button_group(
+  controls* c, 
+  closure* listener,
+  button_group_e group 
+);
+void controls_remove_realtime_listener_for_button_group(
+  controls* c, 
+  gid_t listener_id,
+  button_group_e group 
+);
+
 /*
  * Closures:
  * listener(crank_event* e): Called when cranking causes a change in tick count

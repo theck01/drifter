@@ -12,6 +12,8 @@ void* history_stack_push(history_stack* stack, void* item);
 
 void* history_stack_pop(history_stack* stack);
 
+void** history_stack_get_underlying_array(history_stack* stack);
+
 void history_stack_flush(history_stack* stack);
 
 void history_stack_destroy(history_stack* stack);

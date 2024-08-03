@@ -39,16 +39,19 @@ void* history_stack_push(history_stack* s, void* item) {
 void* history_stack_pop(history_stack* s) {
 	uint16_t prev = s->i > 0 ? s->i - 1 : s->size - 1;
 	void* item = s->stack[prev];
-	if (!item) {
-		return NULL;
-	}
 	s->i = prev;
 	s->stack[prev] = NULL;
 	return item;
 }
 
-void history_stack_flush(history_stack* stack) {
-  while (history_stack_pop(stack)) {}
+void** history_stack_get_underlying_array(history_stack* s) {
+  return s->stack;
+}
+
+void history_stack_flush(history_stack* s) {
+  for (uint16_t i = 0; i < s->size; i++) {
+    s->stack[i] = NULL;
+  }
 }
 
 void history_stack_destroy(history_stack* s) {
