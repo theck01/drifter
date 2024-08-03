@@ -2,8 +2,8 @@
 #ifndef DRIFTER
 #define DRIFTER
 
-#include "C/core/controls.h"
-#include "C/core/world.h"
+#include "C/core/controls/controls.h"
+#include "C/core/world/world.h"
 
 typedef struct drifter_struct drifter;
 

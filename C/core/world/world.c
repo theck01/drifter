@@ -2,13 +2,13 @@
 
 #include "C/api.h"
 #include "C/const.h"
+#include "C/core/viewport/viewport.h"
 #include "C/macro.h"
 #include "C/utils/closure.h"
 #include "C/utils/geometry.h"
 
 #include "tile.private.h"
 #include "entity.private.h"
-#include "viewport.h"
 
 #include "world.private.h"
 

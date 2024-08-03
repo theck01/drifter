@@ -5,10 +5,10 @@
 #include "C/api.h"
 #include "C/const.h"
 #include "C/macro.h"
-#include "C/core/sprite-animator.h"
-#include "C/core/movement-controller.h"
-#include "C/core/entity.h"
-#include "C/core/sensor.h"
+#include "C/core/animation/sprite-animator.h"
+#include "C/core/controls/dpad-movement.h"
+#include "C/core/world/entity.h"
+#include "C/core/world/sensor.h"
 #include "C/utils/closure.h"
 #include "C/utils/memory-recycler.h"
 #include "C/utils/random.h"
@@ -48,7 +48,7 @@ typedef struct drifter_listeners_struct {
 struct drifter_struct {
   entity* self;
   LCDSprite* sprite;
-  movement_controller* mc;
+  dpad_movement* dm;
   sprite_animator* animator;
   drifter_listeners listeners;
 };
@@ -121,7 +121,7 @@ void* drifter_move(void* self, va_list args) {
   int dx = va_arg(args, int);
   int dy = va_arg(args, int);
 
-  model->direction = movement_controller_get_direction(d->mc);
+  model->direction = dpad_movement_get_direction(d->dm);
 
   // If movement has completed, signified with a (0,0) difference, then
   // change the drifters action to IDLE
@@ -145,7 +145,7 @@ void* drifter_move(void* self, va_list args) {
 
 void* drifter_plan(void* self, va_list args) {
   drifter* d = (drifter*)self;
-  movement_controller_step(d->mc);
+  dpad_movement_step(d->dm);
   return NULL;
 }
 
@@ -289,7 +289,7 @@ drifter* drifter_create(world* w, controls* c, point* p) {
     .speed_increment_px = 1,
     .speed_decrement_px = 2,
   };
-  d->mc = movement_controller_create(
+  d->dm = dpad_movement_create(
     &config,
     closure_create(d, drifter_move),
     c
@@ -325,7 +325,7 @@ entity* drifter_get_entity(drifter* d) {
 void drifter_destroy(drifter* d) {
   PlaydateAPI* api = get_api();
   entity_destroy(d->self);  
-  movement_controller_destroy(d->mc);
+  dpad_movement_destroy(d->dm);
   sprite_animator_destroy(d->animator);
   api->sprite->removeSprite(d->sprite);
   api->sprite->freeSprite(d->sprite);

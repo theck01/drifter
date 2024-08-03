@@ -1,6 +1,6 @@
 
-#ifndef GAME_CLOCK
-#define GAME_CLOCK
+#ifndef CLOCK
+#define CLOCK
 
 #include "C/utils/closure.h"
 #include "C/utils/types.h"
@@ -21,10 +21,10 @@ typedef enum {
  *   clock_mask_e,
  * ): Called when the gameing causes time to change
  */
-gid_t game_clock_add_listener(closure* listener);
+gid_t clock_add_listener(closure* listener);
 
-void game_clock_remove_listener(gid_t id);
+void clock_remove_listener(gid_t id);
 
-void game_clock_update(void);
+void clock_update(void);
 
 #endif

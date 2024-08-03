@@ -2,11 +2,10 @@
 #ifndef CAMERA
 #define CAMERA
 
+#include "C/core/controls/controls.h"
+#include "C/core/world/entity.h"
+#include "C/core/world/world.h"
 #include "C/utils/geometry.h"
-
-#include "controls.h"
-#include "entity.h"
-#include "world.h"
 
 typedef enum {
   FIXED,

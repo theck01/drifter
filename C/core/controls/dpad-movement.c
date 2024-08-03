@@ -5,13 +5,13 @@
 #include "C/macro.h"
 #include "C/utils/geometry.h"
 
-#include "movement-controller.h"
+#include "dpad-movement.h"
 
 // 1/sqrt(2), used to make sure diagonal movement is as fast as straight line
 // movement
 const float DIAGONAL_MOVE_FRACTION = 0.70710678118f;
 
-struct movement_controller_struct {
+struct dpad_movement_struct {
   movement_config config;
   closure* move;
   controls* c;
@@ -24,7 +24,7 @@ struct movement_controller_struct {
 static void* dpad_listener(void* self, va_list args) {
   PlaydateAPI* api = get_api();
 
-  movement_controller* mc = (movement_controller*) self;
+  dpad_movement* dm = (dpad_movement*) self;
   input_event* dpad_events = va_arg(args, input_event*);
 
   direction_e active_direction = NONE;
@@ -40,105 +40,105 @@ static void* dpad_listener(void* self, va_list args) {
   }
 
   if (active_direction != NONE) {
-    mc->direction = active_direction;
-    mc->actively_moving = true;
+    dm->direction = active_direction;
+    dm->actively_moving = true;
   } else {
-    mc->actively_moving = false;
+    dm->actively_moving = false;
   }
 
   return NULL;
 }
 
-movement_controller* movement_controller_create(
+dpad_movement* dpad_movement_create(
   movement_config* config,
   closure* move, 
   controls* dpad
 ) {
-  movement_controller* mc = malloc(sizeof(movement_controller));
-  if (!mc) {
+  dpad_movement* dm = malloc(sizeof(dpad_movement));
+  if (!dm) {
     get_api()->system->error(
       "Could not allocate memory for movement controller"
     );
   }
   
-  memcpy(&mc->config, config, sizeof(movement_config));
-  mc->move = move;
-  mc->c = dpad;
-  mc->controls_id = controls_add_listener_for_button_group(
+  memcpy(&dm->config, config, sizeof(movement_config));
+  dm->move = move;
+  dm->c = dpad;
+  dm->controls_id = controls_add_listener_for_button_group(
     dpad, 
-    closure_create(mc, dpad_listener),
+    closure_create(dm, dpad_listener),
     DPAD
   );
 
-  mc->direction = NONE;
-  mc->speed = 0;
-  mc->actively_moving = false;
+  dm->direction = NONE;
+  dm->speed = 0;
+  dm->actively_moving = false;
 
-  return mc;
+  return dm;
 }
 
-int movement_controller_get_speed(movement_controller* mc) {
-  return mc->speed;
+int dpad_movement_get_speed(dpad_movement* dm) {
+  return dm->speed;
 }
 
-direction_e movement_controller_get_direction(movement_controller* mc) {
-  return mc->direction;
+direction_e dpad_movement_get_direction(dpad_movement* dm) {
+  return dm->direction;
 }
 
-void movement_controller_step(movement_controller* mc) {
-  int old_speed = mc->speed;
+void dpad_movement_step(dpad_movement* dm) {
+  int old_speed = dm->speed;
   // Update speed based on recent directional inputs
-  if (mc->actively_moving) {
-    mc->speed = min(
-      mc->speed + mc->config.speed_increment_px, 
-      mc->config.max_speed_px
+  if (dm->actively_moving) {
+    dm->speed = min(
+      dm->speed + dm->config.speed_increment_px, 
+      dm->config.max_speed_px
     );
   } else {
-    mc->speed = max(mc->speed - mc->config.speed_decrement_px, 0);
+    dm->speed = max(dm->speed - dm->config.speed_decrement_px, 0);
   }
 
   // If stopping, send one final move with a 0,0 offset to notify mover that
   // actions have ended (for now)
-  if (mc->speed == 0 && old_speed > 0) {
-    closure_call(mc->move, 0, 0);
+  if (dm->speed == 0 && old_speed > 0) {
+    closure_call(dm->move, 0, 0);
   }
 
   // Update movers position based on speed
-  if (mc->speed > 0) {
-    if (mc->direction == NONE) {
+  if (dm->speed > 0) {
+    if (dm->direction == NONE) {
       get_api()->system->error(
         "Movement controller has %d speed but no direction", 
-        mc->speed
+        dm->speed
       );
     }
 
     point offset = { .x = 0, .y = 0 };
-    if (mc->direction & U) {
+    if (dm->direction & U) {
       offset.y -= 1;
     }
-    if (mc->direction & D) {
+    if (dm->direction & D) {
       offset.y += 1;
     }
-    if (mc->direction & L) {
+    if (dm->direction & L) {
       offset.x -= 1;
     }
-    if (mc->direction & R) {
+    if (dm->direction & R) {
       offset.x += 1;
     }
 
     float move_fraction = offset.x && offset.y ? DIAGONAL_MOVE_FRACTION : 1.f;
-    offset.x = offset.x * roundf(move_fraction * mc->speed);
-    offset.y = offset.y * roundf(move_fraction * mc->speed);
-    closure_call(mc->move, offset.x, offset.y);
+    offset.x = offset.x * roundf(move_fraction * dm->speed);
+    offset.y = offset.y * roundf(move_fraction * dm->speed);
+    closure_call(dm->move, offset.x, offset.y);
   }
 }
 
-void movement_controller_destroy(movement_controller* mc) {
+void dpad_movement_destroy(dpad_movement* dm) {
   controls_remove_listener_for_button_group(
-    mc->c, 
-    mc->controls_id, 
+    dm->c, 
+    dm->controls_id, 
     DPAD
   );
-  closure_destroy(mc->move);
-  free(mc);
+  closure_destroy(dm->move);
+  free(dm);
 }

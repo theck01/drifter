@@ -13,15 +13,13 @@
 #include "pd_api.h"
 
 #include "C/api.h"
-#include "C/core/controls.h"
-#include "C/core/camera.h"
-#include "C/core/game-clock.h"
-#include "C/core/fps-timers.h"
-#include "C/core/input-generator.h"
-#include "C/core/sprite-animator.h"
-#include "C/core/structure.h"
-#include "C/core/viewport.h"
-#include "C/core/world.h"
+#include "C/core/animation/fps-timers.h"
+#include "C/core/controls/controls.h"
+#include "C/core/controls/input-generator.h"
+#include "C/core/clock.h"
+#include "C/core/viewport/camera.h"
+#include "C/core/viewport/viewport.h"
+#include "C/core/world/world.h"
 #include "C/entities/drifter/drifter.h"
 #include "C/ui/map-grid.h"
 #include "C/utils/random.h"
@@ -36,7 +34,7 @@ static drifter* player = NULL;
 
 int update_loop(void* _) {
   input_generator_flush(default_controls);
-  game_clock_update();
+  clock_update();
   fps_timers_update();
   api->sprite->updateAndDrawSprites();
   api->system->drawFPS(0, 0);

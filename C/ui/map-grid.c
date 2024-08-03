@@ -6,7 +6,7 @@
 
 #include "C/api.h"
 #include "C/const.h"
-#include "C/core/viewport.h"
+#include "C/core/viewport/viewport.h"
 #include "C/utils/closure.h"
 #include "C/utils/geometry.h"
 #include "C/utils/sprite.h"

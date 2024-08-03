@@ -4,11 +4,12 @@
 
 #include "C/api.h"
 #include "C/macro.h"
+#include "C/core/controls/dpad-movement.h"
+#include "C/core/clock.h"
 #include "C/utils/closure.h"
 #include "C/utils/types.h"
 
-#include "game-clock.h"
-#include "movement-controller.h"
+
 #include "viewport.h"
 
 #include "camera.h"
@@ -28,7 +29,7 @@ struct camera_struct {
   point origin;
   gid_t clock_id;
   entity* tracked;
-  movement_controller* mc;
+  dpad_movement* dm;
   camera_mode_e mode;
 };
 
@@ -79,7 +80,7 @@ void* camera_time_advance(void* context, va_list args) {
   clock_mask_e clock_mask = (clock_mask_e)va_arg(args, int);
 
   if (c->mode == MANUAL_MOVEMENT) {
-    movement_controller_step(c->mc);
+    dpad_movement_step(c->dm);
   }
 
   if (c->tracked) {
@@ -102,9 +103,9 @@ camera* camera_create(
 
   c->w = w;
   memcpy(&c->origin, &origin, sizeof(point));
-  c->clock_id = game_clock_add_listener(closure_create(c, camera_time_advance));
+  c->clock_id = clock_add_listener(closure_create(c, camera_time_advance));
   c->tracked = NULL;
-  c->mc = NULL;
+  c->dm = NULL;
   c->mode = FIXED;
 
   viewport_set_offset(origin.x, origin.y);
@@ -114,8 +115,8 @@ camera* camera_create(
 
 void camera_teardown_existing_mode(camera* c) {
   if (c->mode == MANUAL_MOVEMENT) {
-    movement_controller_destroy(c->mc);
-    c->mc = NULL;
+    dpad_movement_destroy(c->dm);
+    c->dm = NULL;
   } else if (c->mode == TRACKING) {
     c->tracked = NULL;
   }
@@ -148,7 +149,7 @@ void camera_control_with_dpad(camera* c, controls* dpad) {
     .speed_increment_px = 1,
     .speed_decrement_px = 2,
   };
-  c->mc = movement_controller_create(
+  c->dm = dpad_movement_create(
     &config,
     closure_create(c, camera_move),
     dpad
@@ -167,5 +168,5 @@ camera_mode_e camera_get_mode(camera* c) {
 
 void camera_destroy(camera* c) {
   camera_teardown_existing_mode(c);
-  game_clock_remove_listener(c->clock_id);
+  clock_remove_listener(c->clock_id);
 }

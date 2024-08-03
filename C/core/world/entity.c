@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "C/api.h"
-#include "C/core/game-clock.h"
+#include "C/core/clock.h"
 
 #include "world.private.h"
 #include "tile.private.h"
@@ -27,7 +27,7 @@ struct entity_struct {
 
   entity_behavior behavior;
 
-  gid_t game_clock_id;
+  gid_t clock_id;
 
   // Used to reduce calls to memcpy and behavior.apply
   void* last_model_applied;
@@ -111,7 +111,7 @@ entity* entity_create(
   e->last_model_applied = model_allocator();
 
   memcpy(&(e->behavior), behavior, sizeof(entity_behavior));
-  e->game_clock_id = INVALID_GID;
+  e->clock_id = INVALID_GID;
   e->parent_world = NULL;
   e->shown = false;
   e->was_shown = false;
@@ -208,7 +208,7 @@ void entity_set_world(entity* e, world* w) {
 
   e->parent_world = w;
   closure_call(e->behavior.spawn);
-  e->game_clock_id = game_clock_add_listener(
+  e->clock_id = clock_add_listener(
     closure_create(e, entity_time_advance)
   );
 }
@@ -218,8 +218,8 @@ void entity_clear_world(entity* e) {
     get_api()->system->error("Entity does not belong to a world");
   }
 
-  game_clock_remove_listener(e->game_clock_id);
-  e->game_clock_id = INVALID_GID;
+  clock_remove_listener(e->clock_id);
+  e->clock_id = INVALID_GID;
 
   closure_call(e->behavior.despawn);
   e->parent_world = NULL;
