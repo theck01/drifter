@@ -29,7 +29,7 @@ void* gesture_handle_input(void* context, va_list args) {
   history_stack_push(g->input_history, (void*)active_btns);
   closure_call(
     g->recognizer, 
-    (uintptr_t*)history_stack_get_underlying_array(g->input_history)
+    g->input_history
   );
 
   return NULL;

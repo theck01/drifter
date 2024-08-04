@@ -44,8 +44,20 @@ void* history_stack_pop(history_stack* s) {
 	return item;
 }
 
-void** history_stack_get_underlying_array(history_stack* s) {
-  return s->stack;
+uint16_t history_stack_size(history_stack* s) {
+  return s->size;
+}
+
+void* history_stack_get(history_stack* s, uint16_t i) {
+  if (i >= s->size) {
+    get_api()->system->error(
+      "Cannot get history stack item %d beyond %d size", 
+      i,
+      s->size
+    );
+  }
+  uint16_t offset_i = ((uint32_t)s->i + (uint32_t)i)%(s->size);
+  return s->stack[offset_i];
 }
 
 void history_stack_flush(history_stack* s) {

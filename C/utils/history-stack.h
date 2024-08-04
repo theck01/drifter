@@ -12,7 +12,9 @@ void* history_stack_push(history_stack* stack, void* item);
 
 void* history_stack_pop(history_stack* stack);
 
-void** history_stack_get_underlying_array(history_stack* stack);
+uint16_t history_stack_size(history_stack* stack);
+
+void* history_stack_get(history_stack* stack, uint16_t i);
 
 void history_stack_flush(history_stack* stack);
 

@@ -12,8 +12,10 @@ typedef struct gesture_struct gesture;
 
 /*
  * Closures:
- * (uint16_t* active_btn_history)
- * Scan over the active buttons on each frame (with length buffer_size) to
+ * (history_stack* active_btn_history)
+ * active_btn_history items can be cast to a uintptr_t, which represents a bit
+ * field of all buttons actively pressed on the given frame. This closure should
+ * scan over the active buttons on each frame (with length buffer_size) to
  * recognize and handle complex input gestures
  */
 gesture* gesture_create(
