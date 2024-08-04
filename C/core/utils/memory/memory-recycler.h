@@ -2,7 +2,7 @@
 #ifndef MEMORY_RECYCLER
 #define MEMORY_RECYCLER
 
-#include "types.h"
+#include "C/core/utils/types.h"
 
 typedef struct memory_recycler_struct memory_recycler;
 

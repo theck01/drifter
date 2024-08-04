@@ -6,11 +6,11 @@
 
 #include "C/api.h"
 #include "C/const.h"
+#include "C/core/closure.h"
+#include "C/core/graphics/sprite.h"
+#include "C/core/utils/geometry.h"
+#include "C/core/utils/types.h"
 #include "C/core/viewport/viewport.h"
-#include "C/utils/closure.h"
-#include "C/utils/geometry.h"
-#include "C/utils/sprite.h"
-#include "C/utils/types.h"
 
 
 #include "map-grid.h"

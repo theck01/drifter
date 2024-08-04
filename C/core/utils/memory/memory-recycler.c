@@ -1,7 +1,6 @@
 
 #include "C/api.h"
-
-#include "vector.h"
+#include "C/core/utils/data-structures/vector.h"
 
 #include "memory-recycler.h"
 

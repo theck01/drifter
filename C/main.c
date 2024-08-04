@@ -13,17 +13,16 @@
 #include "pd_api.h"
 
 #include "C/api.h"
-#include "C/core/animation/fps-timers.h"
 #include "C/core/controls/controls.h"
 #include "C/core/controls/input-generator.h"
 #include "C/core/clock.h"
+#include "C/core/graphics/fps-timers.h"
 #include "C/core/viewport/camera.h"
 #include "C/core/viewport/viewport.h"
 #include "C/core/world/world.h"
+#include "C/core/utils/random.h"
 #include "C/entities/drifter/drifter.h"
 #include "C/ui/map-grid.h"
-#include "C/utils/random.h"
-#include "C/utils/vector.h"
 
 static PlaydateAPI* api = NULL;
 

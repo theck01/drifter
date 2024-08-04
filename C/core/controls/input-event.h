@@ -7,7 +7,7 @@
 
 #include "pd_api.h"
 
-#include "C/utils/types.h"
+#include "C/core/utils/types.h"
 
 typedef enum {
   PRESS = 1<<0,

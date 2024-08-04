@@ -2,7 +2,7 @@
 #ifndef STRUCTURE
 #define STRUCTURE
 
-#include "C/utils/geometry.h"
+#include "C/core/utils/geometry.h"
 
 #include "entity.h"
 

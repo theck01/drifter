@@ -2,8 +2,8 @@
 #include <string.h>
 
 #include "C/api.h"
+#include "C/core/utils/geometry.h"
 #include "C/macro.h"
-#include "C/utils/geometry.h"
 
 #include "dpad-movement.h"
 

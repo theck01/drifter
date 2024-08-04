@@ -1,6 +1,6 @@
 
 #include "C/api.h"
-#include "C/utils/history-stack.h"
+#include "C/core/utils/data-structures/history-stack.h"
 
 #include "gesture.h"
 

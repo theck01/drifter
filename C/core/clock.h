@@ -2,8 +2,9 @@
 #ifndef CLOCK
 #define CLOCK
 
-#include "C/utils/closure.h"
-#include "C/utils/types.h"
+#include "C/core/utils/types.h"
+
+#include "closure.h"
 
 // The game can generate more than one tick per frame, the listener call for
 // the first tick will have the START mask, the listener call for the last

@@ -1,6 +1,6 @@
 
 #include "C/api.h"
-#include "C/utils/sprite.h"
+#include "C/core/graphics/sprite.h"
 
 #include "entity.private.h"
 

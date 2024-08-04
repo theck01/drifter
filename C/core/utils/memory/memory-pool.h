@@ -2,8 +2,8 @@
 #ifndef MEMORY_POOL
 #define MEMORY_POOL
 
-#include "closure.h"
-#include "types.h"
+#include "C/core/closure.h"
+#include "C/core/utils/types.h"
 
 typedef struct memory_pool_struct memory_pool;
 

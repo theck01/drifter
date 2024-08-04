@@ -2,7 +2,7 @@
 #ifndef WORLD
 #define WORLD
 
-#include "C/utils/geometry.h"
+#include "C/core/utils/geometry.h"
 
 #include "types.h"
 

@@ -5,18 +5,17 @@
 #include "C/api.h"
 #include "C/const.h"
 #include "C/macro.h"
-#include "C/core/animation/sprite-animator.h"
+#include "C/core/closure.h"
 #include "C/core/controls/dpad-movement.h"
+#include "C/core/graphics/sprite.h"
+#include "C/core/graphics/sprite-animator.h"
+#include "C/core/utils/memory/memory-recycler.h"
+#include "C/core/utils/random.h"
+#include "C/core/utils/types.h"
 #include "C/core/world/entity.h"
 #include "C/core/world/sensor.h"
-#include "C/utils/closure.h"
-#include "C/utils/memory-recycler.h"
-#include "C/utils/random.h"
-#include "C/utils/sprite.h"
-#include "C/utils/types.h"
 
 #include "drifter.h"
-
 
 // TYPES & CONST
 

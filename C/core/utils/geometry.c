@@ -6,8 +6,6 @@
 #include "C/const.h"
 #include "C/macro.h"
 
-#include "logging.h"
-
 #include "geometry.h"
 
 void int_rect_to_lcd(int_rect* ir, LCDRect* lcd) {

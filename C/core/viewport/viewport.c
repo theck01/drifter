@@ -4,8 +4,8 @@
 
 #include "C/api.h"
 #include "C/macro.h"
-#include "C/core/animation/sprite-animator.h"
 #include "C/core/event-emitter.h"
+#include "C/core/graphics/sprite-animator.h"
 
 #include "viewport.h"
 

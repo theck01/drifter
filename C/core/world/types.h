@@ -1,6 +1,6 @@
 
-#ifndef CORE_TYPES
-#define CORE_TYPES
+#ifndef WORLD_TYPES
+#define WORLD_TYPES
 
 typedef struct entity_struct entity;
 

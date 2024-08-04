@@ -2,7 +2,7 @@
 #ifndef TILE_PRIVATE
 #define TILE_PRIVATE
 
-#include "C/utils/vector.h"
+#include "C/core/utils/data-structures/vector.h"
 
 #include "sensor.h"
 

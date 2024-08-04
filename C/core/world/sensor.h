@@ -5,10 +5,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "types.h"
+#include "C/core/utils/geometry.h"
+#include "C/core/utils/types.h"
 
-#include "C/utils/geometry.h"
-#include "C/utils/types.h"
+#include "types.h"
 
 sensor* sensor_create(uint8_t tile_radius, grid_pos center, world* w);
 

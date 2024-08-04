@@ -4,8 +4,10 @@
 
 #include <stdint.h>
 
-#include "C/utils/closure.h"
-#include "C/utils/types.h"
+#include "C/core/utils/types.h"
+
+#include "closure.h"
+
 
 typedef struct event_emitter_struct event_emitter;
 

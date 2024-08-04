@@ -3,8 +3,8 @@
 #include <math.h>
 
 #include "C/api.h"
-#include "C/utils/closure.h"
 
+#include "closure.h"
 #include "event-emitter.h"
 
 #include "clock.h"

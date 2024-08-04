@@ -3,9 +3,9 @@
 #define CAMERA
 
 #include "C/core/controls/controls.h"
+#include "C/core/utils/geometry.h"
 #include "C/core/world/entity.h"
 #include "C/core/world/world.h"
-#include "C/utils/geometry.h"
 
 typedef enum {
   FIXED,

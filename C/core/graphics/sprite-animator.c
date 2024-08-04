@@ -1,8 +1,8 @@
 #include <stdbool.h>
 
 #include "C/api.h"
+#include "C/core/closure.h"
 #include "C/macro.h"
-#include "C/utils/closure.h"
 
 #include "fps-timers.h"
 

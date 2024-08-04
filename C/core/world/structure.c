@@ -2,9 +2,9 @@
 #include <limits.h>
 
 #include "C/api.h"
+#include "C/core/utils/data-structures/vector.h"
+#include "C/core/utils/memory/memory-recycler.h"
 #include "C/macro.h"
-#include "C/utils/memory-recycler.h"
-#include "C/utils/vector.h"
 
 #include "structure.private.h"
 

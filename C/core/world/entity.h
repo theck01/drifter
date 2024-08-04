@@ -3,9 +3,9 @@
 #define ENTITY
 
 #include "C/const.h"
-#include "C/utils/closure.h"
-#include "C/utils/geometry.h"
-#include "C/utils/types.h"
+#include "C/core/closure.h"
+#include "C/core/utils/geometry.h"
+#include "C/core/utils/types.h"
 
 #include "types.h"
 

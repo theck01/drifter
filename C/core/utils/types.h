@@ -1,6 +1,6 @@
 
-#ifndef UTIL_TYPES
-#define UTIL_TYPES
+#ifndef CORE_TYPES
+#define CORE_TYPES
 
 #include <stdint.h>
 

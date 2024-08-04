@@ -2,8 +2,6 @@
 #ifndef SENSOR_PRIVATE
 #define SENSOR_PRIVATE
 
-#include "C/utils/types.h"
-
 #include "tile.private.h"
 
 #include "sensor.h"

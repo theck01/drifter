@@ -5,11 +5,11 @@
 
 #include "C/api.h"
 #include "C/const.h"
+#include "C/core/utils/memory/memory-recycler.h"
+#include "C/core/utils/data-structures/vector.h"
 #include "C/macro.h"
-#include "C/utils/closure.h"
-#include "C/utils/memory-recycler.h"
-#include "C/utils/vector.h"
 
+#include "closure.h"
 #include "event-emitter.h"
 
 struct event_emitter_struct {

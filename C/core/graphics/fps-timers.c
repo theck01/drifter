@@ -1,10 +1,9 @@
+#include <stdbool.h>
 
 #include "C/api.h"
 #include "C/const.h"
 #include "C/core/event-emitter.h"
 #include "C/macro.h"
-#include "C/utils/closure.h"
-#include "C/utils/vector.h"
 
 #include "fps-timers.h"
 

@@ -4,11 +4,10 @@
 
 #include "C/api.h"
 #include "C/macro.h"
-#include "C/core/controls/dpad-movement.h"
 #include "C/core/clock.h"
-#include "C/utils/closure.h"
-#include "C/utils/types.h"
-
+#include "C/core/closure.h"
+#include "C/core/controls/dpad-movement.h"
+#include "C/core/utils/types.h"
 
 #include "viewport.h"
 

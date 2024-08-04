@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-#include "C/utils/closure.h"
+#include "C/core/closure.h"
 
 #include "controls.h"
 
