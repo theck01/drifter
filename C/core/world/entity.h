@@ -54,7 +54,8 @@ typedef struct entity_behavior_struct {
  */
 entity* entity_create(
   char* label,
-  int_rect* bounds_to_copy,
+  point* position,
+  point* size,
   void* model_init, 
   entity_behavior* behavior,
   allocator_fn model_allocator,

@@ -202,7 +202,7 @@ void* drifter_spawn(void* self, va_list args) {
   point p;
   entity_get_position(d->self, &p);
 
-  d->sprite = create_draw_only_sprite();
+  d->sprite = create_entity_sprite();
   api->sprite->moveTo(d->sprite, p.x, p.y);
   api->sprite->setZIndex(d->sprite, ACTOR_Z_INDEX);
   api->sprite->addSprite(d->sprite);
@@ -269,11 +269,10 @@ drifter* drifter_create(world* w, controls* c, point* p) {
     .action = IDLE,
     .direction = NONE,
   };
-  int_rect bounds = { 
-    .x = p->x, 
-    .y = p->y, 
-    .width = DRIFTER_WIDTH_PX, 
-    .height = DRIFTER_HEIGHT_PX 
+
+  point size = { 
+    .x = DRIFTER_WIDTH_PX, 
+    .y = DRIFTER_HEIGHT_PX 
   };
   entity_behavior behavior = {
     .spawn = closure_create(d, drifter_spawn),
@@ -284,7 +283,8 @@ drifter* drifter_create(world* w, controls* c, point* p) {
   };
   d->self = entity_create(
     DRIFTER_LABEL,
-    &bounds,
+    p,
+    &size,
     &initial_extended,
     &behavior,
     drifter_view_model_allocator,

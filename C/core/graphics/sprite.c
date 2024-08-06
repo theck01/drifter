@@ -13,3 +13,9 @@ LCDSprite* create_draw_only_sprite(void) {
   api->sprite->setCollisionsEnabled(s, 0);
   return s;
 }
+
+LCDSprite* create_entity_sprite(void) {
+  LCDSprite* s = create_draw_only_sprite();
+  get_api()->sprite->setCenter(s, 0.5 /* middle x */, 1 /* bottom y */);
+  return s;
+}

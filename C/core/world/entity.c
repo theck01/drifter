@@ -39,13 +39,12 @@ struct entity_struct {
 void entity_apply_changes(entity* e) {
   if (e->shown) {
     bool did_move = 
-        !e->was_shown || 
-        e->bounds.x != e->last_bounds_applied.x ||
-        e->bounds.y != e->last_bounds_applied.y;
+      e->bounds.x != e->last_bounds_applied.x ||
+      e->bounds.y != e->last_bounds_applied.y;
     closure_call(
       e->behavior.apply, 
       e->model, 
-      e->was_shown ? e->last_model_applied : NULL,
+      e->last_model_applied,
       did_move ? 1 : 0
     );
 
@@ -79,7 +78,8 @@ static void* entity_time_advance(void* context, va_list args) {
 
 entity* entity_create(
   char* label,
-  int_rect* bounds,
+  point* position,
+  point* size,
   void* model_init,
   entity_behavior* behavior,
   allocator_fn model_allocator,
@@ -98,9 +98,11 @@ entity* entity_create(
   e->model_copy = model_copy;
 
   // Setup core model
-  memcpy(&(e->bounds), bounds, sizeof(int_rect));
-  point p = { .x = bounds->x, .y = bounds->y };
-  grid_pos_for_point(p, &(e->world_pos));
+  e->bounds.x = position->x - size->x / 2;
+  e->bounds.y = position->y - size->y;
+  e->bounds.width = size->x;
+  e->bounds.height = size->y;
+  grid_pos_for_point(*position, &(e->world_pos));
   e->foothold = NULL;
   // and model state
   e->model = model_allocator();
@@ -141,11 +143,12 @@ void entity_show(entity* e, bool show) {
   if (show && !e->is_game_advancing) {
     entity_apply_changes(e);
   }
+
 }
 
 void entity_get_position(entity* e, point* p) {
-  p->x = e->bounds.x;
-  p->y = e->bounds.y;
+  p->x = e->bounds.x + e->bounds.width / 2;
+  p->y = e->bounds.y + e->bounds.height;
 }
 
 void entity_get_grid_pos(entity* e, grid_pos* gp) {
@@ -166,9 +169,10 @@ void* entity_get_model(entity* e) {
 }
 
 void entity_move_to(entity* e, point p) {
-  point original = { .x =e->bounds.x, .y = e->bounds.y };
-  e->bounds.x = p.x;
-  e->bounds.y = p.y;
+  point original;
+  entity_get_position(e, &original);
+  e->bounds.x = p.x - e->bounds.width / 2;
+  e->bounds.y = p.y - e->bounds.height;
   grid_pos_for_point(p, &e->world_pos);
   if (e->parent_world) {
     world_entity_moved(e->parent_world, e, original);
@@ -208,6 +212,7 @@ void entity_set_world(entity* e, world* w) {
 
   e->parent_world = w;
   closure_call(e->behavior.spawn);
+  closure_call(e->behavior.apply, e->model, NULL, 1 /* did_move */);
   e->clock_id = clock_add_listener(
     closure_create(e, entity_time_advance)
   );
