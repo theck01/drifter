@@ -168,13 +168,11 @@ void input_generator_flush(controls* c) {
   crank_event ce;
   crank_check(&ce);
 
-  if (event_count > 0 || ce.diff) {
-    controls_handle(
-      c, 
-      event_count > 0 ? all_input_events : NULL, 
-      ce.diff ? &ce : NULL
-    );
-  }
+  controls_handle(
+    c, 
+    event_count > 0 ? all_input_events : NULL, 
+    ce.diff ? &ce : NULL
+  );
 
   queue_size = 0;
   buttons_on_last_flush = next_state;

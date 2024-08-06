@@ -21,7 +21,7 @@ void* gesture_handle_input(void* context, va_list args) {
   while (!input_event_is_nil(events[i])) {
     input_button_e btn = input_event_button(events[i]);
     input_action_e action = input_event_action(events[i]);
-    if (action == HELD || action == PRESS) {
+    if (action == HELD || action == PRESS || action == TAP) {
       active_btns |= btn;
     }
     i++;
@@ -68,5 +68,6 @@ void gesture_destroy(gesture* g) {
     g->btn_group
   );
   history_stack_destroy(g->input_history);
+  closure_destroy(g->recognizer);
   free(g);
 }

@@ -113,14 +113,14 @@ void controls_remove_crank_listener(controls* c, gid_t listener_id) {
 
 
 void controls_handle(controls* c, input_event* btn_events, crank_event* ce) {
-  if (btn_events) {
-    input_event dpad_events[INPUT_QUEUE_SIZE];
-    int dpad_count = 0;
-    input_event a_events[INPUT_QUEUE_SIZE];
-    int a_count = 0;
-    input_event b_events[INPUT_QUEUE_SIZE];
-    int b_count = 0;
+  input_event dpad_events[INPUT_QUEUE_SIZE];
+  int dpad_count = 0;
+  input_event a_events[INPUT_QUEUE_SIZE];
+  int a_count = 0;
+  input_event b_events[INPUT_QUEUE_SIZE];
+  int b_count = 0;
 
+  if (btn_events) {
     int i = 0;
     while (!input_event_is_nil(btn_events[i])) {
       input_button_e btn = input_event_button(btn_events[i]);
@@ -133,24 +133,24 @@ void controls_handle(controls* c, input_event* btn_events, crank_event* ce) {
       }
       i++;
     }
+  }
 
-    dpad_events[dpad_count] = create_nil_event();
-    event_emitter_fire(c->realtime.dpad, dpad_events);
-    if (dpad_count > 0) {
-      event_emitter_fire(c->normal.dpad, dpad_events);
-    }
+  dpad_events[dpad_count] = create_nil_event();
+  event_emitter_fire(c->realtime.dpad, dpad_events);
+  if (dpad_count > 0) {
+    event_emitter_fire(c->normal.dpad, dpad_events);
+  }
 
-    a_events[a_count] = create_nil_event();
-    event_emitter_fire(c->realtime.a, a_events);
-    if (a_count > 0) {
-      event_emitter_fire(c->normal.a, a_events);
-    }
+  a_events[a_count] = create_nil_event();
+  event_emitter_fire(c->realtime.a, a_events);
+  if (a_count > 0) {
+    event_emitter_fire(c->normal.a, a_events);
+  }
 
-    b_events[b_count] = create_nil_event();
-    event_emitter_fire(c->realtime.b, b_events);
-    if (b_count > 0) {
-      event_emitter_fire(c->normal.b, b_events);
-    }
+  b_events[b_count] = create_nil_event();
+  event_emitter_fire(c->realtime.b, b_events);
+  if (b_count > 0) {
+    event_emitter_fire(c->normal.b, b_events);
   }
 
   if (ce) {

@@ -16,6 +16,7 @@
 #include "C/core/world/sensor.h"
 
 #include "drifter.h"
+#include "dash-recognizer.h"
 
 // TYPES & CONST
 
@@ -30,46 +31,47 @@ typedef enum {
   WALK = 1
 } action_e;
 
-typedef struct drifter_model_struct {
+typedef struct drifter_view_model_struct {
   action_e action;
   direction_e direction;
-} drifter_model;
+} drifter_view_model;
 
 // move closure to replace speed + actively moving model
 
-typedef struct drifter_listeners_struct {
+typedef struct drifter_controls_struct {
   controls* owner;
+  dash_recognizer* dr;
   gid_t a_btn;
   gid_t b_btn;
   gid_t crank;
-} drifter_listeners;
+} drifter_controls;
 
 struct drifter_struct {
   entity* self;
   LCDSprite* sprite;
   dpad_movement* dm;
   sprite_animator* animator;
-  drifter_listeners listeners;
+  drifter_controls listeners;
 };
 
 // MODEL LOGIC
 
-void* drifter_model_allocator(void) {
-  drifter_model* am = malloc(sizeof(drifter_model));
+void* drifter_view_model_allocator(void) {
+  drifter_view_model* am = malloc(sizeof(drifter_view_model));
   if (!am) {
     get_api()->system->error("Could not allocate memory for drifter model");
   }
   return am;
 }
 
-void drifter_model_destructor(void* model) {
-  free((drifter_model*)model);
+void drifter_view_model_destructor(void* model) {
+  free((drifter_view_model*)model);
 }
 
-void drifter_model_copy(void * dest, void* source) {
-  drifter_model* amd = (drifter_model*)dest;
-  drifter_model* ams = (drifter_model*)source;
-  memcpy(amd, ams, sizeof(drifter_model));
+void drifter_view_model_copy(void * dest, void* source) {
+  drifter_view_model* amd = (drifter_view_model*)dest;
+  drifter_view_model* ams = (drifter_view_model*)source;
+  memcpy(amd, ams, sizeof(drifter_view_model));
 }
 
 // ANIMATION LOADING
@@ -116,7 +118,7 @@ static void load_animations_if_needed(void) {
 
 void* drifter_move(void* self, va_list args) {
   drifter* d = (drifter*)self;
-  drifter_model* model = (drifter_model*)entity_get_model(d->self);
+  drifter_view_model* model = (drifter_view_model*)entity_get_model(d->self);
   int dx = va_arg(args, int);
   int dy = va_arg(args, int);
 
@@ -142,6 +144,13 @@ void* drifter_move(void* self, va_list args) {
   return NULL;
 }
 
+void* drifter_dash(void* self, va_list args) {
+  drifter* d = (drifter*)self;
+  direction_e dir = (direction_e)va_arg(args, int);
+  get_api()->system->logToConsole("drifter dash in %x direction", dir);
+  return NULL;
+}
+
 void* drifter_plan(void* self, va_list args) {
   drifter* d = (drifter*)self;
   dpad_movement_step(d->dm);
@@ -151,8 +160,8 @@ void* drifter_plan(void* self, va_list args) {
 void* drifter_apply(void* self, va_list args) {
   PlaydateAPI* api = get_api();
   drifter* d = (drifter*)self;
-  drifter_model* current = va_arg(args, drifter_model*);
-  drifter_model* prev = va_arg(args, drifter_model*);
+  drifter_view_model* current = va_arg(args, drifter_view_model*);
+  drifter_view_model* prev = va_arg(args, drifter_view_model*);
   int did_move = va_arg(args, int);
 
   if (did_move) {
@@ -199,7 +208,7 @@ void* drifter_spawn(void* self, va_list args) {
   api->sprite->addSprite(d->sprite);
   api->sprite->setVisible(d->sprite, false);
 
-  drifter_model* model = (drifter_model*)entity_get_model(d->self);
+  drifter_view_model* model = (drifter_view_model*)entity_get_model(d->self);
   d->animator = sprite_animator_create(
     d->sprite,
     drifter_animations[model->action],
@@ -256,7 +265,7 @@ drifter* drifter_create(world* w, controls* c, point* p) {
     get_api()->system->error("Could not allocate memory for drifter");
   }
 
-  drifter_model initial_extended = {
+  drifter_view_model initial_extended = {
     .action = IDLE,
     .direction = NONE,
   };
@@ -278,9 +287,9 @@ drifter* drifter_create(world* w, controls* c, point* p) {
     &bounds,
     &initial_extended,
     &behavior,
-    drifter_model_allocator,
-    drifter_model_destructor,
-    drifter_model_copy
+    drifter_view_model_allocator,
+    drifter_view_model_destructor,
+    drifter_view_model_copy
   );
 
   movement_config config = {
@@ -306,12 +315,16 @@ drifter* drifter_create(world* w, controls* c, point* p) {
   closure_retain(btn_listener);
 
   d->listeners.owner = c;
+
+  d->listeners.dr = dash_recognizer_create(c, closure_create(d, drifter_dash));
+
   d->listeners.a_btn = 
     controls_add_listener_for_button_group(c, btn_listener, A_BTN);
   d->listeners.b_btn = 
     controls_add_listener_for_button_group(c, btn_listener, B_BTN);
   d->listeners.crank = 
     controls_add_crank_listener(c, closure_create(d, drifter_crank));
+
 
   return d;
 }
@@ -328,6 +341,8 @@ void drifter_destroy(drifter* d) {
   sprite_animator_destroy(d->animator);
   api->sprite->removeSprite(d->sprite);
   api->sprite->freeSprite(d->sprite);
+
+  dash_recognizer_destroy(d->listeners.dr);
 
   controls_remove_listener_for_button_group(
     d->listeners.owner, 
