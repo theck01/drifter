@@ -204,7 +204,6 @@ void* drifter_spawn(void* self, va_list args) {
 
   d->sprite = create_entity_sprite();
   api->sprite->moveTo(d->sprite, p.x, p.y);
-  api->sprite->setZIndex(d->sprite, ACTOR_Z_INDEX);
   api->sprite->addSprite(d->sprite);
   api->sprite->setVisible(d->sprite, false);
 
@@ -227,6 +226,7 @@ void* drifter_despawn(void* self, va_list args) {
     api->system->error("Cannot despawn drifter that is already despawned");
   }
 
+  api->sprite->removeSprite(d->sprite);
   api->sprite->freeSprite(d->sprite);
   d->sprite = NULL;
   sprite_animator_destroy(d->animator);
@@ -338,9 +338,6 @@ void drifter_destroy(drifter* d) {
   PlaydateAPI* api = get_api();
   entity_destroy(d->self);  
   dpad_movement_destroy(d->dm);
-  sprite_animator_destroy(d->animator);
-  api->sprite->removeSprite(d->sprite);
-  api->sprite->freeSprite(d->sprite);
 
   dash_recognizer_destroy(d->listeners.dr);
 
