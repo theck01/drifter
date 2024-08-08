@@ -10,10 +10,10 @@ LCDBitmap* white_bg = NULL;
 LCDBitmap* black_bg = NULL;
 
 static void init_if_needed(void) {
-  PlaydateAPI* api = get_api();
   if (white_bg && black_bg) {
     return;
   }
+  PlaydateAPI* api = get_api();
 
   const char* err;
   white_bg = api->graphics->loadBitmap(

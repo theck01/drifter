@@ -6,7 +6,7 @@
 
 typedef void* (*allocator_fn)(void);
 typedef void (*destructor_fn)(void *);
-typedef void (*copy_fn)(void* destination, void* source);
+typedef void (*copy_fn)(void* destination, const void* source);
 
 // 0bLURD
 typedef enum {

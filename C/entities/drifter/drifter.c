@@ -20,7 +20,7 @@
 
 // TYPES & CONST
 
-static char* DRIFTER_LABEL = "DRIFTER";
+static const char* DRIFTER_LABEL = "DRIFTER";
 static const uint8_t MAX_SPEED_PX = 5;
 static const uint8_t SPEED_INCREMENT_PX = 1;
 static const uint8_t DRIFTER_WIDTH_PX = 18;
@@ -68,7 +68,7 @@ void drifter_view_model_destructor(void* model) {
   free((drifter_view_model*)model);
 }
 
-void drifter_view_model_copy(void * dest, void* source) {
+void drifter_view_model_copy(void * dest, const void* source) {
   drifter_view_model* amd = (drifter_view_model*)dest;
   drifter_view_model* ams = (drifter_view_model*)source;
   memcpy(amd, ams, sizeof(drifter_view_model));
@@ -306,9 +306,6 @@ drifter* drifter_create(world* w, controls* c, point* p) {
   d->sprite = NULL;
   d->animator = NULL;
 
-  world_add_entity(w, d->self);
-
-
   closure* btn_listener = closure_create(d, drifter_button_press);
   // Retain btn closure twice, so that it can withstand being destroyed by 2 
   // removals needed to fully disconnect the listener from all events
@@ -325,6 +322,7 @@ drifter* drifter_create(world* w, controls* c, point* p) {
   d->listeners.crank = 
     controls_add_crank_listener(c, closure_create(d, drifter_crank));
 
+  world_add_entity(w, d->self);
 
   return d;
 }
@@ -335,7 +333,6 @@ entity* drifter_get_entity(drifter* d) {
 
 
 void drifter_destroy(drifter* d) {
-  PlaydateAPI* api = get_api();
   entity_destroy(d->self);  
   dpad_movement_destroy(d->dm);
 

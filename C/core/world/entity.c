@@ -12,7 +12,7 @@
 #include "entity.private.h"
 
 struct entity_struct {
-  char* label;
+  const char* label;
 
   int_rect bounds;
   grid_pos world_pos;
@@ -77,11 +77,11 @@ static void* entity_time_advance(void* context, va_list args) {
 }
 
 entity* entity_create(
-  char* label,
-  point* position,
-  point* size,
-  void* model_init,
-  entity_behavior* behavior,
+  const char* label,
+  const point* position,
+  const point* size,
+  const void* model_init,
+  const entity_behavior* behavior,
   allocator_fn model_allocator,
   destructor_fn model_destructor,
   copy_fn model_copy
@@ -122,7 +122,7 @@ entity* entity_create(
   return e;
 }
 
-char* entity_get_label(entity* e) {
+const char* entity_get_label(entity* e) {
   return e->label;
 }
 

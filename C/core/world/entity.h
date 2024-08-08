@@ -53,17 +53,17 @@ typedef struct entity_behavior_struct {
  * ownership.
  */
 entity* entity_create(
-  char* label,
-  point* position,
-  point* size,
-  void* model_init, 
-  entity_behavior* behavior,
+  const char* label,
+  const point* position,
+  const point* size,
+  const void* model_init, 
+  const entity_behavior* behavior,
   allocator_fn model_allocator,
   destructor_fn model_destructor,
   copy_fn model_copy
 );
 
-char* entity_get_label(entity* e);
+const char* entity_get_label(entity* e);
 
 void entity_get_position(entity* e, point* p);
 void entity_get_grid_pos(entity* e, grid_pos* gp);

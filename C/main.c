@@ -22,6 +22,7 @@
 #include "C/core/world/world.h"
 #include "C/core/utils/random.h"
 #include "C/entities/drifter/drifter.h"
+#include "C/entities/scenery/tall-grass.h"
 #include "C/ui/map-grid.h"
 
 static PlaydateAPI* api = NULL;
@@ -30,6 +31,7 @@ static world* main_world = NULL;
 static controls* default_controls = NULL;
 static camera* main_camera = NULL;
 static drifter* player = NULL;
+static tall_grass* grass = NULL;
 
 int update_loop(void* _) {
   input_generator_flush(default_controls);
@@ -70,6 +72,9 @@ int eventHandler(
 
     point p = { .x = 600, .y = 120 };
     player = drifter_create(main_world, default_controls, &p);
+
+    p.x = 650;
+    grass = tall_grass_create(main_world, &p);
 
     point camera_origin = { .x = 400, .y = 0 };
     main_camera = camera_create(main_world, camera_origin);
