@@ -33,7 +33,7 @@ typedef enum {
 
 typedef struct drifter_view_model_struct {
   action_e action;
-  direction_e direction;
+  direction_e nsew_direction;
 } drifter_view_model;
 
 // move closure to replace speed + actively moving model
@@ -74,24 +74,41 @@ void drifter_view_model_copy(void * dest, const void* source) {
   memcpy(amd, ams, sizeof(drifter_view_model));
 }
 
-// ANIMATION LOADING
+// ANIMATION LOADING/LOGIC
 
-// Animations stored with index pattern [action]
-static LCDBitmapTable* drifter_animations[] = {
-  NULL,
-  NULL,
+// Animations stored with index pattern [action][direction-cipher]
+// direction-cipher 0=D,1=U,2=R,3=L
+static LCDBitmapTable* drifter_animations[][4] = {
+  {NULL, NULL, NULL, NULL },
+  {NULL, NULL, NULL, NULL }
 };
 
 typedef struct drifter_animation_description_struct {
   char* name;
   action_e action;
+  direction_e direction;
 } drifter_animation_description;
 static drifter_animation_description animation_description[] = {
-  { .name = "img/drifter/idle.gif", .action = IDLE },
-  { .name = "img/drifter/walk.gif", .action = WALK },
+  { .name = "img/drifter/idle-forward.gif", .action = IDLE, .direction = 0 /* D */ },
+  { .name = "img/drifter/idle-away.gif", .action = IDLE, .direction = 1 /* U */ },
+  { .name = "img/drifter/idle-right.gif", .action = IDLE, .direction = 2 /* R */ },
+  { .name = "img/drifter/idle-left.gif", .action = IDLE, .direction = 3 /* L */ },
+  { .name = "img/drifter/walk-forward.gif", .action = WALK, .direction = 0 /* D */ },
+  { .name = "img/drifter/walk-away.gif", .action = WALK, .direction = 1 /* U */ },
+  { .name = "img/drifter/walk-right.gif", .action = WALK, .direction = 2 /* R */ },
+  { .name = "img/drifter/walk-left.gif", .action = WALK, .direction = 3 /* L */ }
 };
-static const uint8_t animation_count = 2;
+static const uint8_t animation_count = 8;
 static bool drifter_animations_loaded = false;
+
+static uint8_t animation_index_for_direction(direction_e dir) {
+  if (dir & D) return 0;
+  else if (dir & U) return 1;
+  else if (dir & R) return 2;
+  else if (dir & L) return 3;
+  get_api()->system->error("Cannot get animation index for direction %d", dir);
+  return 0;
+}
 
 static void load_animations_if_needed(void) {
   if (!drifter_animations_loaded) {
@@ -99,10 +116,10 @@ static void load_animations_if_needed(void) {
     PlaydateAPI* api = get_api();
     for (uint8_t i=0; i < animation_count; i++) {
       drifter_animation_description description = animation_description[i];
-      drifter_animations[description.action] =
+      drifter_animations[description.action][description.direction] =
         api->graphics->loadBitmapTable(description.name, &err);
 
-      if (!drifter_animations[description.action]) {
+      if (!drifter_animations[description.action][description.direction]) {
         api->system->error(
           "Could not load drifter animation \"%s\" because of error \"%s\"", 
           description.name, 
@@ -122,7 +139,20 @@ void* drifter_move(void* self, va_list args) {
   int dx = va_arg(args, int);
   int dy = va_arg(args, int);
 
-  model->direction = dpad_movement_get_direction(d->dm);
+  direction_e dir = dpad_movement_get_direction(d->dm);
+  if (!(dir & model->nsew_direction)) {
+    if (dir & D) {
+      model->nsew_direction = D;
+    } else if (dir & U) {
+      model->nsew_direction = U;
+    } else if (dir & R) {
+      model->nsew_direction = R;
+    } else if (dir & L) {
+      model->nsew_direction = L;
+    } else {
+      get_api()->system->error("Cannot change to drifter to NONE direction");
+    }
+  }
 
   // If movement has completed, signified with a (0,0) difference, then
   // change the drifters action to IDLE
@@ -169,11 +199,24 @@ void* drifter_apply(void* self, va_list args) {
     entity_get_position(d->self, &p);
     api->sprite->moveTo(d->sprite, p.x, p.y);
   }
-  if (!prev || current->action != prev->action) {
+
+  if (
+    !prev || 
+    current->action != prev->action
+  ) {
     sprite_animator_set_animation_and_frame(
       d->animator, 
-      drifter_animations[current->action],
+      drifter_animations[current->action][
+       animation_index_for_direction(current->nsew_direction)
+      ],
       0 /* starting frame */
+    );
+  } else if (current->nsew_direction != prev->nsew_direction) {
+    sprite_animator_set_animation(
+      d->animator, 
+      drifter_animations[current->action][
+        animation_index_for_direction(current->nsew_direction)
+      ]
     );
   }
   return NULL;
@@ -210,7 +253,9 @@ void* drifter_spawn(void* self, va_list args) {
   drifter_view_model* model = (drifter_view_model*)entity_get_model(d->self);
   d->animator = sprite_animator_create(
     d->sprite,
-    drifter_animations[model->action],
+    drifter_animations[model->action][
+      animation_index_for_direction(model->nsew_direction)
+    ],
     12 /* fps */, 
     0 /* starting_frame */
   );
@@ -267,7 +312,7 @@ drifter* drifter_create(world* w, controls* c, point* p) {
 
   drifter_view_model initial_extended = {
     .action = IDLE,
-    .direction = NONE,
+    .nsew_direction = D
   };
 
   point size = { 
