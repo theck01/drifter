@@ -15,9 +15,12 @@
 static const int VIEWPORT_TILE_SHOW_BUFFER = -1;
 
 static const int VISIBLE_TILE_HEIGHT = 
-  (SCREEN_HEIGHT_PX / MAP_TILE_SIZE_PX) + 2 * VIEWPORT_TILE_SHOW_BUFFER;
+  // integer ceiling of screen_height/tile_size
+  ((SCREEN_HEIGHT_PX + MAP_TILE_SIZE_PX - 1) / MAP_TILE_SIZE_PX) + 
+  2 * VIEWPORT_TILE_SHOW_BUFFER;
 static const int VISIBLE_TILE_WIDTH = 
-  (SCREEN_WIDTH_PX / MAP_TILE_SIZE_PX) + 2 * VIEWPORT_TILE_SHOW_BUFFER;
+  ((SCREEN_WIDTH_PX + MAP_TILE_SIZE_PX - 1) / MAP_TILE_SIZE_PX) + 
+  + 2 * VIEWPORT_TILE_SHOW_BUFFER;
 
 static int tile_index(world* w, int row, int column) {
   return row * w->tiles_wide + column;

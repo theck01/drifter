@@ -14,7 +14,7 @@ static const uint8_t CRANK_TICKS_PER_REVOLUTION = 24;
 // Must be divisible by screen size
 static const int SCREEN_WIDTH_PX = 400;
 static const int SCREEN_HEIGHT_PX = 240;
-static const uint8_t MAP_TILE_SIZE_PX = 40;
+static const uint8_t MAP_TILE_SIZE_PX = 32;
 
 static const uint16_t TILE_BACKGROUND_Z_INDEX = 1;
 static const uint16_t MAP_GRID_Z_INDEX = 10;

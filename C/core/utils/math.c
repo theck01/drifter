@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "C/api.h"
-#include "random.h"
+#include "math.h"
 
 float randomf(void) {
   int n = rand();

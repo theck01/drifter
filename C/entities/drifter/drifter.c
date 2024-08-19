@@ -10,7 +10,6 @@
 #include "C/core/graphics/sprite.h"
 #include "C/core/graphics/sprite-animator.h"
 #include "C/core/utils/memory/memory-recycler.h"
-#include "C/core/utils/random.h"
 #include "C/core/utils/types.h"
 #include "C/core/world/entity.h"
 #include "C/core/world/sensor.h"
@@ -23,8 +22,8 @@
 static const char* DRIFTER_LABEL = "DRIFTER";
 static const uint8_t MAX_SPEED_PX = 5;
 static const uint8_t SPEED_INCREMENT_PX = 1;
-static const uint8_t DRIFTER_WIDTH_PX = 18;
-static const uint8_t DRIFTER_HEIGHT_PX = 36;
+static const uint8_t DRIFTER_WIDTH_PX = 25;
+static const uint8_t DRIFTER_HEIGHT_PX = 50;
 
 typedef enum {
   IDLE = 0,

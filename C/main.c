@@ -20,7 +20,7 @@
 #include "C/core/viewport/camera.h"
 #include "C/core/viewport/viewport.h"
 #include "C/core/world/world.h"
-#include "C/core/utils/random.h"
+#include "C/core/utils/math.h"
 #include "C/entities/drifter/drifter.h"
 #include "C/entities/scenery/tall-grass.h"
 #include "C/ui/map-grid.h"
