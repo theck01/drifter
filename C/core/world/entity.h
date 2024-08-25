@@ -69,6 +69,8 @@ void entity_get_position(entity* e, point* p);
 void entity_get_grid_pos(entity* e, grid_pos* gp);
 void entity_get_bounds(entity* e, int_rect* b);
 
+uint16_t entity_get_squared_distance_between(entity* e1, entity* e2);
+
 sensor* entity_get_sensor(entity* e);
 
 void entity_move_to(entity* e, point p);

@@ -12,6 +12,8 @@
 
 sensor* sensor_create(uint8_t tile_radius, grid_pos center, world* w);
 
+entity* sensor_get_entity_nearest(sensor* s, entity* e);
+
 // sensor will not allow moving outside of tile radius, among other conditions
 // dictated by world state such as world boundary, or solid tiles, etc.
 // Returns false if actual differs from desired, otherwise true

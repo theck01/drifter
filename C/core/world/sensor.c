@@ -1,9 +1,11 @@
 
 #include "C/api.h"
 #include "C/const.h"
+#include "C/core/utils/data-structures/vector.h"
 
-#include "tile.private.h"
+#include "entity.private.h"
 #include "sensor.private.h"
+#include "tile.private.h"
 #include "world.private.h"
 
 static tile* tile_for_grid_pos(sensor* s, grid_pos p) {
@@ -69,6 +71,34 @@ sensor* sensor_create(uint8_t tile_radius, grid_pos center, world* w) {
   }
 
   return s;
+}
+
+entity* sensor_get_entity_nearest(sensor* s, entity* e) {
+  // If performance is too slow in practice, search for closest from current
+  // tile and only search neighboring tiles that could possibly be closer than
+  // the closest near tile. Small tile size hopefully makes this unnecessary
+  entity* nearest = NULL;
+  uint16_t min_distance = UINT16_MAX;
+
+  int sensor_view_size = s->tile_radius * 2 + 1;
+  int tile_count = sensor_view_size * sensor_view_size;
+
+  for (int i = 0; i < tile_count; i++) {
+    tile* t = s->tile_refs[i];
+    uint16_t entity_count = vector_length(t->entities);
+    for (int j = 0; j < entity_count; j++) {
+      entity* other = vector_item_at_index(t->entities, j);
+      if (other == e) continue;
+
+      uint16_t distance = entity_get_squared_distance_between(e, other);
+      if (distance < min_distance) {
+        min_distance = distance;
+        nearest = other;
+      }
+    }
+  }
+
+  return nearest;
 }
 
 bool sensor_can_entity_move(

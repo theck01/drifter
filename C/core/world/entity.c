@@ -4,6 +4,7 @@
 
 #include "C/api.h"
 #include "C/core/clock.h"
+#include "C/core/utils/geometry.h"
 
 #include "world.private.h"
 #include "tile.private.h"
@@ -157,6 +158,37 @@ void entity_get_grid_pos(entity* e, grid_pos* gp) {
 
 void entity_get_bounds(entity* e, int_rect* b) {
   memcpy(b, &(e->bounds), sizeof(int_rect));
+}
+
+uint16_t entity_get_squared_distance_between(entity* e1, entity* e2) {
+  LCDRect e1_lcd, e2_lcd;
+  int_rect_to_lcd(&e1->bounds, &e1_lcd);
+  int_rect_to_lcd(&e2->bounds, &e2_lcd);
+
+  // Consider e2 as fixed. Determine the position of e1 relative to e2, then
+  // use the relevant points for the position to calculate the distance
+  bool above = e2_lcd.top < e1_lcd.bottom;
+  bool below = e2_lcd.bottom > e1_lcd.top;
+  bool left = e2_lcd.left < e1_lcd.right;
+  bool right = e2_lcd.right > e1_lcd.left;
+
+  uint16_t xdiff = 0;
+  uint16_t ydiff = 0;
+
+  if (above) {
+    ydiff = e2_lcd.top - e1_lcd.bottom;
+  } 
+  if (below) {
+    ydiff = e1_lcd.top - e2_lcd.bottom;
+  } 
+  if (left) {
+    xdiff = e2_lcd.left - e1_lcd.right;
+  }
+  if (right) {
+    xdiff = e2_lcd.left - e1_lcd.right;
+  }
+
+  return xdiff * xdiff + ydiff * ydiff;
 }
 
 sensor* entity_get_sensor(entity* e) {
